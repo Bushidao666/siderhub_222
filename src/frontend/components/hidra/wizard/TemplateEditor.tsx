@@ -3,6 +3,7 @@ import type { CSSProperties, ChangeEvent } from 'react';
 import { colors, glows, surfaces } from '../../../../shared/design/tokens';
 import type { MessageTemplate } from '../../../../shared/types';
 import { Button, Card, CardContent, CardTitle, Input } from '../../common';
+import { MediaUpload, type MediaFile } from './MediaUpload';
 
 type TemplateEditorProps = {
   templates: MessageTemplate[];
