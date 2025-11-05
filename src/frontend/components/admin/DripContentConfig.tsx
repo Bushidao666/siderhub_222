@@ -557,7 +557,7 @@ export const DripContentConfig = ({
                         style={{
                           '--checkbox-border': colors.borderPrimary,
                           '--checkbox-bg': colors.bgSecondary,
-                          '--checkbox-checkbox-checked': colors.accentSuccess,
+                          '--checkbox-checked': colors.accentSuccess,
                           '--checkbox-focus': colors.borderAccent,
                         } as CSSProperties}
                       />
@@ -575,7 +575,7 @@ export const DripContentConfig = ({
                         style={{
                           '--checkbox-border': colors.borderPrimary,
                           '--checkbox-bg': colors.bgSecondary,
-                          '--checkbox-checkbox-checked': colors.accentSuccess,
+                          '--checkbox-checked': colors.accentSuccess,
                           '--checkbox-focus': colors.borderAccent,
                         } as CSSProperties}
                       />
@@ -710,7 +710,7 @@ export const DripContentConfig = ({
                           style={{
                             '--checkbox-border': colors.borderPrimary,
                             '--checkbox-bg': colors.bgSecondary,
-                            '--checkbox-checkbox-checked': colors.accentSuccess,
+                            '--checkbox-checked': colors.accentSuccess,
                             '--checkbox-focus': colors.borderAccent,
                           } as CSSProperties}
                         />
@@ -730,7 +730,7 @@ export const DripContentConfig = ({
                           style={{
                             '--checkbox-border': colors.borderPrimary,
                             '--checkbox-bg': colors.bgSecondary,
-                            '--checkbox-checkbox-checked': colors.accentSuccess,
+                            '--checkbox-checked': colors.accentSuccess,
                             '--checkbox-focus': colors.borderAccent,
                           } as CSSProperties}
                         />
@@ -748,7 +748,7 @@ export const DripContentConfig = ({
                           style={{
                             '--checkbox-border': colors.borderPrimary,
                             '--checkbox-bg': colors.bgSecondary,
-                            '--checkbox-checkbox-checked': colors.accentSuccess,
+                            '--checkbox-checked': colors.accentSuccess,
                             '--checkbox-focus': colors.borderAccent,
                           } as CSSProperties}
                         />
