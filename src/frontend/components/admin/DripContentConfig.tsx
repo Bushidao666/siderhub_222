@@ -780,7 +780,7 @@ export const DripContentConfig = ({
             </div>
           )}
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 };
