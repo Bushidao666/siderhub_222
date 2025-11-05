@@ -536,7 +536,7 @@ export const DripContentConfig = ({
                         className="h-4 w-4 rounded border border-[var(--checkbox-border)] bg-[var(--checkbox-bg)] text-[var(--checkbox-checked)] focus:ring-[var(--checkbox-focus)]"
                         style={{
                           '--checkbox-border': colors.borderPrimary,
-                          '--checkbox-bg': categories.bgSecondary,
+                          '--checkbox-bg': surfaces.bgSecondary,
                           '--checkbox-checked': colors.accentSuccess,
                           '--checkbox-focus': colors.borderAccent,
                         } as CSSProperties}
