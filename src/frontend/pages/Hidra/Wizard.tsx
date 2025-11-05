@@ -134,9 +134,11 @@ export const HidraWizard = () => {
     onSuccess: (campaign) => {
       setSuccessMessage(`Campanha ${campaign.name} criada com sucesso.`);
       setSubmissionError(null);
-      setForm(initialScheduleForm);
+      setCampaignForm(initialCampaignForm);
+      setScheduleForm(initialScheduleForm);
       setSelectedSegment(null);
       setSelectedTemplate(null);
+      setSelectedMedia(null);
       setMessagePreview('');
       setCurrentStep(0);
       void Promise.all([
