@@ -105,9 +105,18 @@ export const HidraWizard = () => {
     setSuccessMessage(null);
   };
 
-  const handleFormChange = <K extends keyof ScheduleFormState>(field: K, value: ScheduleFormState[K]) => {
-    setForm((previous) => ({ ...previous, [field]: value }));
+  const handleCampaignFormChange = <K extends keyof CampaignFormState>(field: K, value: CampaignFormState[K]) => {
+    setCampaignForm((previous) => ({ ...previous, [field]: value }));
     setSuccessMessage(null);
+  };
+
+  const handleScheduleFormChange = <K extends keyof ScheduleFormState>(field: K, value: ScheduleFormState[K]) => {
+    setScheduleForm((previous) => ({ ...previous, [field]: value }));
+    setSuccessMessage(null);
+  };
+
+  const handleMediaSelect = (media: any) => {
+    setSelectedMedia(media);
   };
 
   const goNext = () => {
