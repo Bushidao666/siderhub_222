@@ -927,6 +927,78 @@ export class AcademyService {
     return recommended.map((item) => item.recommendation);
   }
 
+  // Admin methods for course and module management
+
+  async getCourse(courseId: UUID): Promise<any> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+    const course = await this.deps.courseRepository.findTreeById(validatedCourseId);
+    if (!course) {
+      throw new AppError({ code: 'ACADEMY_COURSE_NOT_FOUND', message: 'Curso não encontrado', statusCode: 404 });
+    }
+    return course;
+  }
+
+  async getCourseModules(courseId: UUID): Promise<any[]> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+    const courseTree = await this.ensureCourseTree(validatedCourseId);
+    return courseTree.modules;
+  }
+
+  async updateCourseDripConfig(courseId: UUID, config: any): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    // Validate that course exists
+    await this.ensureCourseTree(validatedCourseId);
+
+    // Update course with drip configuration
+    await this.deps.courseRepository.update(validatedCourseId, {
+      dripEnabled: config.enabled,
+      dripType: config.type,
+      dripReleaseDate: config.releaseDate,
+      dripDaysAfterEnrollment: config.daysAfterEnrollment,
+    });
+
+    this.logger.info('Course drip configuration updated', {
+      courseId: validatedCourseId,
+      config,
+    });
+  }
+
+  async updateModuleDripConfig(moduleId: UUID, config: any): Promise<void> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    // Check if module exists
+    const module = await this.deps.courseRepository.findModuleById(validatedModuleId);
+    if (!module) {
+      throw new AppError({ code: 'ACADEMY_MODULE_NOT_FOUND', message: 'Módulo não encontrado', statusCode: 404 });
+    }
+
+    // Update module with drip configuration
+    await this.deps.courseRepository.updateModule(validatedModuleId, {
+      dripType: config.type,
+      dripReleaseAt: config.releaseDate,
+      dripDaysAfter: config.daysAfter,
+      dripAfterModuleId: config.afterModuleId,
+    });
+
+    this.logger.info('Module drip configuration updated', {
+      moduleId: validatedModuleId,
+      config,
+    });
+  }
+
+  async bulkUpdateModuleDripConfigs(moduleConfigs: { moduleId: UUID; config: any }[]): Promise<void> {
+    const updatePromises = moduleConfigs.map(({ moduleId, config }) =>
+      this.updateModuleDripConfig(moduleId, config)
+    );
+
+    await Promise.all(updatePromises);
+
+    this.logger.info('Bulk module drip configurations updated', {
+      count: moduleConfigs.length,
+    });
+  }
+
   private groupRepliesByComment(replies: LessonCommentReply[]): Map<UUID, LessonCommentReply[]> {
     const map = new Map<UUID, LessonCommentReply[]>();
     for (const reply of replies) {
