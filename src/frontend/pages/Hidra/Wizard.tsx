@@ -15,9 +15,11 @@ import { queryKeys } from '../../lib/queryClient';
 import { handleHidraError, hidraService } from '../../services/hidraService';
 
 const steps = [
+  { id: 'basic', label: 'Informações Básicas' },
   { id: 'segment', label: 'Segmentação' },
-  { id: 'template', label: 'Template' },
-  { id: 'schedule', label: 'Agendamento & Revisão' },
+  { id: 'template', label: 'Template & Mídia' },
+  { id: 'schedule', label: 'Agendamento Avançado' },
+  { id: 'review', label: 'Revisão & Confirmação' },
 ] as const;
 
 type Step = (typeof steps)[number];
