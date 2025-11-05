@@ -152,20 +152,33 @@ export const HidraWizard = () => {
   });
 
   const handleSubmit = async () => {
-    if (!selectedSegment || !selectedTemplate) {
+    if (!campaignForm.name.trim() || !selectedSegment || !selectedTemplate) {
       return;
     }
 
     setSubmissionError(null);
 
+    // Build schedule settings
+    const scheduleSettings = {
+      scheduledAt: scheduleForm.scheduledAt || null,
+      maxMessagesPerMinute: Math.max(1, scheduleForm.maxMessagesPerMinute),
+      timeWindows: scheduleForm.timeWindows.enabled ? {
+        startTime: scheduleForm.timeWindows.startTime,
+        endTime: scheduleForm.timeWindows.endTime,
+        daysOfWeek: Object.entries(scheduleForm.daysOfWeek)
+          .filter(([_, enabled]) => enabled)
+          .map(([day]) => day),
+      } : undefined,
+    };
+
     const payload: CreateCampaignPayload = {
-      name: form.name,
-      description: form.description || undefined,
+      name: campaignForm.name,
+      description: campaignForm.description || undefined,
       segmentId: selectedSegment.id,
       templateId: selectedTemplate.id,
-      maxMessagesPerMinute: Math.max(1, form.maxMessagesPerMinute || 60),
-      scheduledAt: form.scheduledAt || null,
-      externalId: form.externalId || undefined,
+      mediaUrl: selectedMedia?.url || null,
+      ...scheduleSettings,
+      externalId: campaignForm.externalId || undefined,
     };
 
     try {
