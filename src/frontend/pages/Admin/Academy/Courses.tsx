@@ -48,6 +48,7 @@ export const AdminAcademyCourses = ({
   onCourseCreate,
   onCourseEdit,
   onCourseDelete,
+  onDripConfig,
   onRetry,
 }: CoursesManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
