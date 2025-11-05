@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import { randomUUID } from 'crypto'
 import { createAuthRouter } from './auth'
+import { createUploadRouter } from './upload'
 import { createHidraRouter } from './hidra'
 import { createAcademyRouter } from './academy'
 import { createCybervaultRouter } from './cybervault'
