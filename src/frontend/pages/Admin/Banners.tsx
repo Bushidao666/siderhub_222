@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { colors, typography } from '../../../shared/design/tokens';
 import type { HeroBanner } from '../../../shared/types/admin.types';
 import { ApiClient } from '../../../shared/utils/apiClient';
 import { assertSuccess, mapApiError } from '../../../shared/utils/errorHandler';
-import { BannerForm, type BannerFormValues } from '../../components/admin/BannerForm';
+import { AdvancedBannerManager, type ExtendedHeroBanner, type CarouselConfig } from '../../components/admin/AdvancedBannerManager';
 import { queryKeys } from '../../lib/queryClient';
 import { selectIsAuthenticated, useAuthStore } from '../../store/auth';
 
