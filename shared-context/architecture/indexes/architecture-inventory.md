@@ -1,0 +1,131 @@
+# Architecture Inventory
+Generated: 2025-11-03T17:07:41Z
+
+- .agents/shared-context/architecture/analysis (files: 27)
+  - .agents/shared-context/architecture/analysis/design-alignment-2025-11-03T08-19-24Z.md
+  - .agents/shared-context/architecture/analysis/design-alignment-2025-11-03T08-22-01Z.md
+  - .agents/shared-context/architecture/analysis/design-alignment-2025-11-03T09-48-08Z.md
+  - .agents/shared-context/architecture/analysis/design-alignment-2025-11-03T11-30-01Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T08-19-24Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T08-22-01Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T09-48-08Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T09-48-44Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T09-49-07Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T11-30-01Z.md
+  - .agents/shared-context/architecture/analysis/gaps-2025-11-03T11-39-22Z.md
+  - .agents/shared-context/architecture/analysis/prd-coverage-2025-11-03T08-19-24Z.md
+  - .agents/shared-context/architecture/analysis/prd-coverage-2025-11-03T08-22-01Z.md
+  - .agents/shared-context/architecture/analysis/prd-coverage-2025-11-03T09-48-08Z.md
+  - .agents/shared-context/architecture/analysis/prd-coverage-2025-11-03T11-30-01Z.md
+  - .agents/shared-context/architecture/analysis/recommendations-2025-11-03T08-19-24Z.jsonl
+  - .agents/shared-context/architecture/analysis/recommendations.jsonl
+  - .agents/shared-context/architecture/analysis/structure-map-2025-11-03T08-10-44Z.md
+  - .agents/shared-context/architecture/analysis/tasks-injection.md
+  - .agents/shared-context/architecture/analysis/type-safety-2025-11-03T08-19-24Z.md
+  - .agents/shared-context/architecture/analysis/type-safety-2025-11-03T08-22-01Z.md
+  - .agents/shared-context/architecture/analysis/type-safety-2025-11-03T09-48-08Z.md
+  - .agents/shared-context/architecture/analysis/type-safety-2025-11-03T11-30-01Z.md
+  - .agents/shared-context/architecture/analysis/violations-2025-11-03T08-19-24Z.md
+  - .agents/shared-context/architecture/analysis/violations-2025-11-03T08-22-01Z.md
+  - .agents/shared-context/architecture/analysis/violations-2025-11-03T09-48-08Z.md
+  - .agents/shared-context/architecture/analysis/violations-2025-11-03T11-30-01Z.md
+- .agents/shared-context/architecture/api (files: 34)
+  - .agents/shared-context/architecture/api/academy-courses-featured.md
+  - .agents/shared-context/architecture/api/academy-courses.md
+  - .agents/shared-context/architecture/api/academy-courses-recommended.md
+  - .agents/shared-context/architecture/api/academy-course-tree.md
+  - .agents/shared-context/architecture/api/academy-lesson-comments.md
+  - .agents/shared-context/architecture/api/academy-lesson-progress.md
+  - .agents/shared-context/architecture/api/academy-lesson-progress-tick.md
+  - .agents/shared-context/architecture/api/academy-lesson-rating.md
+  - .agents/shared-context/architecture/api/academy-progress.md
+  - .agents/shared-context/architecture/api/admin-academy-comments-moderation.md
+  - .agents/shared-context/architecture/api/admin-access-overrides.md
+  - .agents/shared-context/architecture/api/admin-banners.md
+  - .agents/shared-context/architecture/api/admin-dashboard.md
+  - .agents/shared-context/architecture/api/admin-feature-toggles.md
+  - .agents/shared-context/architecture/api/admin-invitations.md
+  - .agents/shared-context/architecture/api/admin-members.md
+  - .agents/shared-context/architecture/api/auth-login.md
+  - .agents/shared-context/architecture/api/auth-logout.md
+  - .agents/shared-context/architecture/api/auth-me.md
+  - .agents/shared-context/architecture/api/auth-refresh.md
+  - .agents/shared-context/architecture/api/auth-register.md
+  - .agents/shared-context/architecture/api/cybervault-resource-detail.md
+  - .agents/shared-context/architecture/api/cybervault-resource-download.md
+  - .agents/shared-context/architecture/api/cybervault-resources.md
+  - .agents/shared-context/architecture/api/hidra-campaign-create.md
+  - .agents/shared-context/architecture/api/hidra-campaign-metrics.md
+  - .agents/shared-context/architecture/api/hidra-campaign-schedule.md
+  - .agents/shared-context/architecture/api/hidra-campaigns.md
+  - .agents/shared-context/architecture/api/hidra-campaigns-metrics-overview.md
+  - .agents/shared-context/architecture/api/hidra-config-test.md
+  - .agents/shared-context/architecture/api/hidra-config-update.md
+  - .agents/shared-context/architecture/api/hidra-dashboard.md
+  - .agents/shared-context/architecture/api/hub-banners.md
+  - .agents/shared-context/architecture/api/hub-overview.md
+- .agents/shared-context/architecture/components (files: 25)
+  - .agents/shared-context/architecture/components/AcademyHighlights.md
+  - .agents/shared-context/architecture/components/AccessMatrix.md
+  - .agents/shared-context/architecture/components/Badge.md
+  - .agents/shared-context/architecture/components/BannerForm.md
+  - .agents/shared-context/architecture/components/Button.md
+  - .agents/shared-context/architecture/components/CampaignTable.md
+  - .agents/shared-context/architecture/components/Card.md
+  - .agents/shared-context/architecture/components/CommentThread.md
+  - .agents/shared-context/architecture/components/CourseCard.md
+  - .agents/shared-context/architecture/components/DownloadModal.md
+  - .agents/shared-context/architecture/components/EvolutionConfigForm.md
+  - .agents/shared-context/architecture/components/FilterBar.md
+  - .agents/shared-context/architecture/components/HeroBanner.md
+  - .agents/shared-context/architecture/components/HubMetricsOverview.md
+  - .agents/shared-context/architecture/components/Input.md
+  - .agents/shared-context/architecture/components/LessonPlayer.md
+  - .agents/shared-context/architecture/components/MemberTable.md
+  - .agents/shared-context/architecture/components/MetricsCards.md
+  - .agents/shared-context/architecture/components/ModuleAccordion.md
+  - .agents/shared-context/architecture/components/ProgressBar.md
+  - .agents/shared-context/architecture/components/RatingStars.md
+  - .agents/shared-context/architecture/components/ResourceCard.md
+  - .agents/shared-context/architecture/components/SaaSCarousel.md
+  - .agents/shared-context/architecture/components/Tabs.md
+  - .agents/shared-context/architecture/components/TimelineChart.md
+- .agents/shared-context/architecture/hooks (files: 14)
+  - .agents/shared-context/architecture/hooks/queryClient.md
+  - .agents/shared-context/architecture/hooks/useAdminMembers.md
+  - .agents/shared-context/architecture/hooks/useAuthForm.md
+  - .agents/shared-context/architecture/hooks/useAuthStore.md
+  - .agents/shared-context/architecture/hooks/useCampaignStats.md
+  - .agents/shared-context/architecture/hooks/useCommentModeration.md
+  - .agents/shared-context/architecture/hooks/useCourseProgress.md
+  - .agents/shared-context/architecture/hooks/useCourseTree.md
+  - .agents/shared-context/architecture/hooks/useHubData.md
+  - .agents/shared-context/architecture/hooks/useLessonComments.md
+  - .agents/shared-context/architecture/hooks/useLessonRating.md
+  - .agents/shared-context/architecture/hooks/useLessonVideoTracking.md
+  - .agents/shared-context/architecture/hooks/useResourceDownload.md
+  - .agents/shared-context/architecture/hooks/useResourceLibrary.md
+- .agents/shared-context/architecture/indexes (files: 5)
+  - .agents/shared-context/architecture/indexes/agents-index.md
+  - .agents/shared-context/architecture/indexes/architecture-inventory.md
+  - .agents/shared-context/architecture/indexes/prd-index.md
+  - .agents/shared-context/architecture/indexes/repo-inventory.md
+  - .agents/shared-context/architecture/indexes/ui-index.md
+- .agents/shared-context/architecture/interfaces (files: 0)
+- .agents/shared-context/architecture/middleware (files: 0)
+- .agents/shared-context/architecture/reports (files: 1)
+  - .agents/shared-context/architecture/reports/context-synthesis.md
+- .agents/shared-context/architecture/schemas (files: 5)
+  - .agents/shared-context/architecture/schemas/academy.md
+  - .agents/shared-context/architecture/schemas/admin.md
+  - .agents/shared-context/architecture/schemas/core.md
+  - .agents/shared-context/architecture/schemas/cybervault.md
+  - .agents/shared-context/architecture/schemas/hidra.md
+- .agents/shared-context/architecture/services (files: 6)
+  - .agents/shared-context/architecture/services/AcademyService.md
+  - .agents/shared-context/architecture/services/AdminService.md
+  - .agents/shared-context/architecture/services/AuthService.md
+  - .agents/shared-context/architecture/services/CybervaultService.md
+  - .agents/shared-context/architecture/services/HidraService.md
+  - .agents/shared-context/architecture/services/HubService.md
+- .agents/shared-context/architecture/utilities (files: 0)

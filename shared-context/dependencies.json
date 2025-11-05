@@ -1,0 +1,61 @@
+{
+  "dependency_graph": {
+    "subagent-context-indexer": {
+      "depends_on": [],
+      "blocks": [],
+      "notes": "Indexa PRD/UI/Prompts/src/Docs; publica indexes e reports"
+    },
+    "subagent-context-analyzer": {
+      "depends_on": ["subagent-context-indexer"],
+      "blocks": [],
+      "notes": "Audita coerência entre PRD/Design/Arquitetura/Código e recomenda ações"
+    },
+    "subagent-database": {
+      "depends_on": [],
+      "blocks": ["subagent-backend-api", "subagent-backend-business-logic"]
+    },
+    "subagent-backend-business-logic": {
+      "depends_on": ["subagent-database"],
+      "blocks": ["subagent-backend-api"]
+    },
+    "subagent-backend-api": {
+      "depends_on": ["subagent-database", "subagent-backend-business-logic"],
+      "blocks": ["subagent-frontend-state"]
+    },
+    "subagent-frontend-state": {
+      "depends_on": ["subagent-backend-api"],
+      "blocks": ["subagent-frontend-components"]
+    },
+    "subagent-frontend-components": {
+      "depends_on": ["subagent-frontend-state"],
+      "blocks": []
+    },
+    "subagent-main-autopilot": {
+      "depends_on": [],
+      "blocks": [
+        "subagent-database",
+        "subagent-backend-business-logic",
+        "subagent-backend-api",
+        "subagent-frontend-state",
+        "subagent-frontend-components",
+        "subagent-testing"
+      ],
+      "notes": "Orquestra respostas automáticas, retoma subagents quando dependências liberam e monitora SLAs/daemons."
+    },
+    "subagent-testing": {
+      "depends_on": ["subagent-backend-api", "subagent-frontend-components"],
+      "blocks": []
+    }
+  },
+  "execution_order": [
+    "subagent-context-indexer",
+    "subagent-context-analyzer",
+    "subagent-database",
+    "subagent-backend-business-logic",
+    "subagent-backend-api",
+    "subagent-frontend-state",
+    "subagent-frontend-components",
+    "subagent-testing",
+    "subagent-main-autopilot"
+  ]
+}

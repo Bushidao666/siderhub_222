@@ -1,0 +1,131 @@
+{
+  "assignments": [
+    {
+      "subagent": "subagent-database",
+      "tasks": [
+        {
+          "id": "db-001",
+          "description": "Modelar schemas core/academy/hidra/cybervault/admin em prisma/schema.prisma",
+          "files": ["prisma/schema.prisma"],
+          "dependencies": [],
+          "priority": "high",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "db-002",
+          "description": "Gerar migrations iniciais e seed de dados base",
+          "files": ["prisma/migrations/*", "prisma/seed.ts"],
+          "dependencies": ["db-001"],
+          "priority": "high",
+          "estimated_time": "30 minutes"
+        }
+      ]
+    },
+    {
+      "subagent": "subagent-backend-business-logic",
+      "tasks": [
+        {
+          "id": "svc-001",
+          "description": "Implementar PasswordService, TokenService e AuthService",
+          "files": ["src/backend/services/auth/*"],
+          "dependencies": ["subagent-database:db-002"],
+          "priority": "high",
+          "estimated_time": "60 minutes"
+        },
+        {
+          "id": "svc-002",
+          "description": "Criar EvolutionClient e HidraService com retries",
+          "files": ["src/backend/services/hidra/*"],
+          "dependencies": ["db-002"],
+          "priority": "medium",
+          "estimated_time": "45 minutes"
+        }
+      ]
+    },
+    {
+      "subagent": "subagent-backend-api",
+      "tasks": [
+        {
+          "id": "api-001",
+          "description": "Expor rotas /api/auth/* com validação Zod e AuthService",
+          "files": ["src/backend/api/auth/*", "src/backend/middleware/*"],
+          "dependencies": ["subagent-backend-business-logic:svc-001"],
+          "priority": "high",
+          "estimated_time": "50 minutes"
+        },
+        {
+          "id": "api-002",
+          "description": "Criar rotas de dashboard para Hidra e Academy",
+          "files": ["src/backend/api/hidra/*", "src/backend/api/academy/*"],
+          "dependencies": ["subagent-backend-business-logic:svc-001", "subagent-backend-business-logic:svc-002"],
+          "priority": "medium",
+          "estimated_time": "60 minutes"
+        }
+      ]
+    },
+    {
+      "subagent": "subagent-frontend-state",
+      "tasks": [
+        {
+          "id": "fe-state-001",
+          "description": "Implementar useAuthStore com persistência e refresh",
+          "files": ["src/frontend/store/auth.ts"],
+          "dependencies": ["subagent-backend-api:api-001"],
+          "priority": "high",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "fe-state-002",
+          "description": "Criar hooks React Query (useHubData, useCampaignStats, useCourseProgress)",
+          "files": ["src/frontend/hooks/*"],
+          "dependencies": ["subagent-backend-api:api-001", "subagent-backend-api:api-002"],
+          "priority": "medium",
+          "estimated_time": "60 minutes"
+        }
+      ]
+    },
+    {
+      "subagent": "subagent-frontend-components",
+      "tasks": [
+        {
+          "id": "fe-comp-001",
+          "description": "Construir componentes base (Button, Card, Input, Badge, Tabs, ProgressBar)",
+          "files": ["src/frontend/components/common/*"],
+          "dependencies": [],
+          "priority": "high",
+          "estimated_time": "50 minutes"
+        },
+        {
+          "id": "fe-comp-002",
+          "description": "Implementar Hub hero, carrosséis e grid da Academia",
+          "files": ["src/frontend/components/hub/*", "src/frontend/components/academy/*"],
+          "dependencies": ["subagent-frontend-state:fe-state-002"],
+          "priority": "medium",
+          "estimated_time": "60 minutes"
+        }
+      ]
+    },
+    {
+      "subagent": "subagent-testing",
+      "tasks": [
+        {
+          "id": "test-001",
+          "description": "Configurar toolchain (Jest, Vitest, Playwright) e scripts",
+          "files": ["tests/setup/*", "package.json"],
+          "dependencies": ["subagent-backend-api:api-001"],
+          "priority": "high",
+          "estimated_time": "45 minutes"
+        },
+        {
+          "id": "test-002",
+          "description": "Escrever suites E2E para fluxo login → curso → campanha → download",
+          "files": ["tests/e2e/*"],
+          "dependencies": ["subagent-backend-api:api-002", "subagent-frontend-components:fe-comp-002"],
+          "priority": "medium",
+          "estimated_time": "60 minutes"
+        }
+      ]
+    }
+  ],
+  "last_updated": "2025-11-02T23:30:00Z"
+}
