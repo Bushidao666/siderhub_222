@@ -339,6 +339,15 @@ export const AdminAcademyCourses = ({
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => onDripConfig?.(course)}
+                    className="text-[var(--drip-color)] hover:bg-[var(--drip-bg)]"
+                    style={{ '--drip-color': colors.accentWarning, '--drip-bg': surfaces.warningTint } as CSSProperties}
+                  >
+                    Drip
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDeleteCourse(course)}
                     className="text-[var(--delete-color)] hover:bg-[var(--delete-bg)]"
                     style={{ '--delete-color': colors.accentError, '--delete-bg': surfaces.errorTint } as CSSProperties}
