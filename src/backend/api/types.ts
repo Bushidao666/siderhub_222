@@ -10,6 +10,7 @@ import type { HubService } from '../services/hub/HubService'
 export interface ApiServices {
   authService: AuthService
   tokenService: TokenService
+  uploadService: UploadService
   hidraService: HidraService
   academyService: AcademyService
   cybervaultService: CybervaultService
