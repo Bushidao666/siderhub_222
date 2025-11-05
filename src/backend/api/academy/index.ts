@@ -477,7 +477,342 @@ export function createAcademyRouter(services: ApiServices) {
     },
   )
 
-  
+  // ==================== ADMIN ENDPOINTS ====================
+
+  // Course Management
+  router.post('/admin/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createCourseSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const course = await services.academyService.createCourse({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID inválido')
+    }
+
+    const parsed = updateCourseSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const course = await services.academyService.updateCourse(courseId.data, parsed.data)
+      return respondSuccess(res, 200, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID inválido')
+    }
+
+    try {
+      await services.academyService.deleteCourse(courseId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Module Management
+  router.post('/admin/courses/:courseId/modules', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    const parsed = createModuleSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const module = await services.academyService.createModule({
+        ...parsed.data,
+        courseId: courseId.data,
+      })
+      return respondSuccess(res, 201, module)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/modules/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const moduleId = uuidSchema.safeParse(req.params.id)
+    if (!moduleId.success) {
+      return respondValidationError(res, 'ID do módulo inválido')
+    }
+
+    const parsed = createModuleSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const module = await services.academyService.updateModule(moduleId.data, parsed.data)
+      return respondSuccess(res, 200, module)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/modules/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const moduleId = uuidSchema.safeParse(req.params.id)
+    if (!moduleId.success) {
+      return respondValidationError(res, 'ID do módulo inválido')
+    }
+
+    try {
+      await services.academyService.deleteModule(moduleId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Lesson Management
+  router.post('/admin/lessons', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createLessonSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const lesson = await services.academyService.createLesson({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, lesson)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/lessons/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const lessonId = uuidSchema.safeParse(req.params.id)
+    if (!lessonId.success) {
+      return respondValidationError(res, 'ID da lição inválido')
+    }
+
+    const parsed = createLessonSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const lesson = await services.academyService.updateLesson(lessonId.data, parsed.data)
+      return respondSuccess(res, 200, lesson)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/lessons/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const lessonId = uuidSchema.safeParse(req.params.id)
+    if (!lessonId.success) {
+      return respondValidationError(res, 'ID da lição inválido')
+    }
+
+    try {
+      await services.academyService.deleteLesson(lessonId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Comment Moderation
+  router.get('/admin/comments/pending', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = commentsQuerySchema.safeParse(req.query)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Parâmetros inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const comments = await services.academyService.getPendingComments({
+        page: parsed.data.page,
+        pageSize: parsed.data.pageSize,
+        after: parsed.data.after,
+      })
+      return respondSuccess(res, 200, comments)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/comments/:id/moderate', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const commentId = uuidSchema.safeParse(req.params.id)
+    if (!commentId.success) {
+      return respondValidationError(res, 'ID do comentário inválido')
+    }
+
+    const parsed = moderateSingleCommentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const comment = await services.academyService.moderateComment({
+        commentId: commentId.data,
+        moderatedBy: req.user!.userId,
+        status: parsed.data.status,
+      })
+      return respondSuccess(res, 200, comment)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/comments/bulk-moderate', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = moderateCommentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.bulkModerateComments({
+        commentIds: parsed.data.commentIds,
+        moderatedBy: req.user!.userId,
+        status: parsed.data.status,
+      })
+      return respondSuccess(res, 200, { moderated: parsed.data.commentIds.length })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Resource Categories Management
+  router.get('/admin/resources/categories', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const categories = await services.cybervaultService.getResourceCategories()
+      return respondSuccess(res, 200, categories)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/resources/categories', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createResourceCategorySchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const category = await services.cybervaultService.createResourceCategory({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, category)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/resources/categories/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const categoryId = uuidSchema.safeParse(req.params.id)
+    if (!categoryId.success) {
+      return respondValidationError(res, 'ID da categoria inválido')
+    }
+
+    const parsed = createResourceCategorySchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const category = await services.cybervaultService.updateResourceCategory(categoryId.data, parsed.data)
+      return respondSuccess(res, 200, category)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Resource Management
+  router.post('/admin/resources', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createResourceSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const resource = await services.cybervaultService.createResource({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+        downloadCount: 0,
+      })
+      return respondSuccess(res, 201, resource)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/resources/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const resourceId = uuidSchema.safeParse(req.params.id)
+    if (!resourceId.success) {
+      return respondValidationError(res, 'ID do recurso inválido')
+    }
+
+    const parsed = createResourceSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const resource = await services.cybervaultService.updateResource(resourceId.data, parsed.data)
+      return respondSuccess(res, 200, resource)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/resources/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const resourceId = uuidSchema.safeParse(req.params.id)
+    if (!resourceId.success) {
+      return respondValidationError(res, 'ID do recurso inválido')
+    }
+
+    try {
+      await services.cybervaultService.deleteResource(resourceId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Analytics
+  router.get('/admin/analytics/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const analytics = await services.academyService.getCourseAnalytics()
+      return respondSuccess(res, 200, analytics)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.get('/admin/analytics/engagement', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const analytics = await services.academyService.getEngagementAnalytics()
+      return respondSuccess(res, 200, analytics)
+    } catch (err) {
+      return next(err)
+    }
+  })
 
   return router
 }
