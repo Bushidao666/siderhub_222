@@ -1053,6 +1053,40 @@ export class AcademyService {
     });
   }
 
+  async updateComplexDripConfig(courseId: UUID, config: any): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    // Validate that course exists
+    await this.ensureCourseTree(validatedCourseId);
+
+    // Update course-level drip settings
+    const hasAnyDripRules = config.modules.some((m: any) => m.enabled && m.dripRule.type !== 'none');
+    await this.deps.courseRepository.update(validatedCourseId, {
+      dripEnabled: hasAnyDripRules || config.unlockOnEnrollment || config.autoUnlockFirstModule,
+      dripType: config.defaultDripType === 'none' ? 'none' : 'enrollment',
+    });
+
+    // Update each module's drip configuration
+    const moduleUpdatePromises = config.modules.map(async (moduleConfig: any) => {
+      const { id, dripRule, enabled } = moduleConfig;
+
+      return this.deps.courseRepository.updateModule(id, {
+        dripType: enabled ? dripRule.type : 'none',
+        dripReleaseAt: dripRule.type === 'date' ? dripRule.releaseDate : null,
+        dripDaysAfter: dripRule.type === 'days_after' ? dripRule.daysAfter : null,
+        dripAfterModuleId: dripRule.type === 'after_completion' ? dripRule.afterModuleId : null,
+      });
+    });
+
+    await Promise.all(moduleUpdatePromises);
+
+    this.logger.info('Complex drip configuration updated', {
+      courseId: validatedCourseId,
+      modulesCount: config.modules.length,
+      enabledModules: config.modules.filter((m: any) => m.enabled).length,
+    });
+  }
+
   // Course CRUD methods for admin
 
   async createCourse(input: any): Promise<any> {
