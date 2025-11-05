@@ -37,7 +37,30 @@ export const SegmentSelector = ({
   loading,
   error,
   onRetry,
+  onCSVImport,
+  csvImportLoading,
 }: SegmentSelectorProps) => {
+  const [showCSVImport, setShowCSVImport] = useState(false);
+
+  if (showCSVImport) {
+    return (
+      <CSVImport
+        onImportComplete={(result) => {
+          if (onCSVImport) {
+            onCSVImport({
+              name: '', // Will be set inside CSVImport
+              description: '',
+              contacts: result.validRows,
+            });
+          }
+          setShowCSVImport(false);
+        }}
+        onCancel={() => setShowCSVImport(false)}
+        loading={csvImportLoading}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2" data-testid="hidra-segment-loading">
@@ -67,11 +90,27 @@ export const SegmentSelector = ({
 
   if (segments.length === 0) {
     return (
-      <Card variant="outlined" data-testid="hidra-segment-empty">
-        <CardContent className="text-center text-sm" style={{ color: colors.textSecondary }}>
-          Nenhum segmento disponível ainda. Importe contatos no Hidra para habilitar esta etapa.
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card variant="outlined" data-testid="hidra-segment-empty">
+          <CardContent className="text-center text-sm" style={{ color: colors.textSecondary }}>
+            Nenhum segmento disponível ainda. Importe contatos para criar segmentos.
+          </CardContent>
+        </Card>
+        {onCSVImport && (
+          <Card variant="outlined">
+            <CardContent className="text-center">
+              <Button
+                variant="primary"
+                onClick={() => setShowCSVImport(true)}
+                disabled={csvImportLoading}
+                data-testid="hidra-csv-import-button"
+              >
+                Importar Contatos via CSV
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     );
   }
 
