@@ -82,12 +82,8 @@ export const AdminAcademyDripContent = ({ courseId, onBack }: DripContentManagem
 
   // Mutation to update drip configuration
   const updateDripConfigMutation = useMutation({
-    mutationFn: async ({ courseId, moduleId, config }: { courseId: string; moduleId?: string; config: any }) => {
-      const endpoint = moduleId
-        ? `/admin/academy/courses/${courseId}/modules/${moduleId}/drip-config`
-        : `/admin/academy/courses/${courseId}/drip-config`;
-
-      const response = await adminApiClient.put(endpoint, config);
+    mutationFn: async ({ courseId, config }: { courseId: string; config: any }) => {
+      const response = await adminApiClient.put(`/admin/academy/courses/${courseId}/drip-config`, config);
       assertSuccess(response);
       return response.data;
     },
