@@ -804,6 +804,60 @@ export class AcademyService {
     return updated;
   }
 
+  async moderateComment(input: { commentId: UUID; moderatedBy: UUID; status: 'approved' | 'rejected' }): Promise<LessonComment> {
+    const payload = moderateCommentSchema.parse({
+      commentId: input.commentId,
+      moderatorId: input.moderatedBy,
+    });
+
+    const comment = await this.deps.lessonCommentRepository.findById(payload.commentId);
+    if (!comment) {
+      throw new AppError({ code: 'ACADEMY_COMMENT_NOT_FOUND', message: 'Comentário não encontrado', statusCode: 404 });
+    }
+
+    if ((input.status === 'approved' && comment.moderationStatus === 'approved' && !comment.pendingModeration) ||
+        (input.status === 'rejected' && comment.moderationStatus === 'rejected' && !comment.pendingModeration)) {
+      return comment;
+    }
+
+    const moderatedAt = this.nowIso();
+    const updated = await this.deps.lessonCommentRepository.updateModeration({
+      commentId: payload.commentId,
+      moderatorId: payload.moderatorId,
+      status: input.status,
+      moderatedAt,
+    });
+
+    await this.updateRepliesModeration(updated.id, payload.moderatorId, input.status, moderatedAt);
+
+    this.logger.info('Lesson comment moderated', {
+      code: 'ACADEMY_COMMENT_MODERATED',
+      commentId: payload.commentId,
+      moderatorId: payload.moderatorId,
+      status: input.status,
+    });
+
+    return updated;
+  }
+
+  async bulkModerateComments(input: { commentIds: UUID[]; moderatedBy: UUID; status: 'approved' | 'rejected' }): Promise<void> {
+    const updatePromises = input.commentIds.map(commentId =>
+      this.moderateComment({
+        commentId,
+        moderatedBy: input.moderatedBy,
+        status: input.status,
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    this.logger.info('Bulk comment moderation completed', {
+      code: 'ACADEMY_BULK_COMMENT_MODERATION',
+      count: input.commentIds.length,
+      status: input.status,
+    });
+  }
+
 
   async rejectComment(input: { commentId: UUID; moderatorId: UUID }): Promise<LessonComment> {
     const payload = moderateCommentSchema.parse(input);
@@ -925,6 +979,267 @@ export class AcademyService {
   async listRecommendations(userId: UUID, limit = 6): Promise<CourseRecommendation[]> {
     const recommended = await this.getRecommendedCourses(userId, limit);
     return recommended.map((item) => item.recommendation);
+  }
+
+  // Admin methods for course and module management
+
+  async getCourse(courseId: UUID): Promise<any> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+    const course = await this.deps.courseRepository.findTreeById(validatedCourseId);
+    if (!course) {
+      throw new AppError({ code: 'ACADEMY_COURSE_NOT_FOUND', message: 'Curso não encontrado', statusCode: 404 });
+    }
+    return course;
+  }
+
+  async getCourseModules(courseId: UUID): Promise<any[]> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+    const courseTree = await this.ensureCourseTree(validatedCourseId);
+    return courseTree.modules;
+  }
+
+  async updateCourseDripConfig(courseId: UUID, config: any): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    // Validate that course exists
+    await this.ensureCourseTree(validatedCourseId);
+
+    // Update course with drip configuration
+    await this.deps.courseRepository.update(validatedCourseId, {
+      dripEnabled: config.enabled,
+      dripType: config.type,
+      dripReleaseDate: config.releaseDate,
+      dripDaysAfterEnrollment: config.daysAfterEnrollment,
+    });
+
+    this.logger.info('Course drip configuration updated', {
+      courseId: validatedCourseId,
+      config,
+    });
+  }
+
+  async updateModuleDripConfig(moduleId: UUID, config: any): Promise<void> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    // Check if module exists
+    const module = await this.deps.courseRepository.findModuleById(validatedModuleId);
+    if (!module) {
+      throw new AppError({ code: 'ACADEMY_MODULE_NOT_FOUND', message: 'Módulo não encontrado', statusCode: 404 });
+    }
+
+    // Update module with drip configuration
+    await this.deps.courseRepository.updateModule(validatedModuleId, {
+      dripType: config.type,
+      dripReleaseAt: config.releaseDate,
+      dripDaysAfter: config.daysAfter,
+      dripAfterModuleId: config.afterModuleId,
+    });
+
+    this.logger.info('Module drip configuration updated', {
+      moduleId: validatedModuleId,
+      config,
+    });
+  }
+
+  async bulkUpdateModuleDripConfigs(moduleConfigs: { moduleId: UUID; config: any }[]): Promise<void> {
+    const updatePromises = moduleConfigs.map(({ moduleId, config }) =>
+      this.updateModuleDripConfig(moduleId, config)
+    );
+
+    await Promise.all(updatePromises);
+
+    this.logger.info('Bulk module drip configurations updated', {
+      count: moduleConfigs.length,
+    });
+  }
+
+  async updateComplexDripConfig(courseId: UUID, config: any): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    // Validate that course exists
+    await this.ensureCourseTree(validatedCourseId);
+
+    // Update course-level drip settings
+    const hasAnyDripRules = config.modules.some((m: any) => m.enabled && m.dripRule.type !== 'none');
+    await this.deps.courseRepository.update(validatedCourseId, {
+      dripEnabled: hasAnyDripRules || config.unlockOnEnrollment || config.autoUnlockFirstModule,
+      dripType: config.defaultDripType === 'none' ? 'none' : 'enrollment',
+    });
+
+    // Update each module's drip configuration
+    const moduleUpdatePromises = config.modules.map(async (moduleConfig: any) => {
+      const { id, dripRule, enabled } = moduleConfig;
+
+      return this.deps.courseRepository.updateModule(id, {
+        dripType: enabled ? dripRule.type : 'none',
+        dripReleaseAt: dripRule.type === 'date' ? dripRule.releaseDate : null,
+        dripDaysAfter: dripRule.type === 'days_after' ? dripRule.daysAfter : null,
+        dripAfterModuleId: dripRule.type === 'after_completion' ? dripRule.afterModuleId : null,
+      });
+    });
+
+    await Promise.all(moduleUpdatePromises);
+
+    this.logger.info('Complex drip configuration updated', {
+      courseId: validatedCourseId,
+      modulesCount: config.modules.length,
+      enabledModules: config.modules.filter((m: any) => m.enabled).length,
+    });
+  }
+
+  // Course CRUD methods for admin
+
+  async createCourse(input: any): Promise<any> {
+    const course = await this.deps.courseRepository.create({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Course created', {
+      courseId: course.id,
+      title: course.title,
+    });
+
+    return course;
+  }
+
+  async updateCourse(courseId: UUID, updates: any): Promise<any> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    const course = await this.deps.courseRepository.update(validatedCourseId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Course updated', {
+      courseId: validatedCourseId,
+      updates: Object.keys(updates),
+    });
+
+    return course;
+  }
+
+  async deleteCourse(courseId: UUID): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    await this.deps.courseRepository.delete(validatedCourseId);
+
+    this.logger.info('Course deleted', {
+      courseId: validatedCourseId,
+    });
+  }
+
+  // Module CRUD methods for admin
+
+  async createModule(input: any): Promise<any> {
+    const module = await this.deps.courseRepository.createModule({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Module created', {
+      moduleId: module.id,
+      courseId: input.courseId,
+      title: module.title,
+    });
+
+    return module;
+  }
+
+  async updateModule(moduleId: UUID, updates: any): Promise<any> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    const module = await this.deps.courseRepository.updateModule(validatedModuleId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Module updated', {
+      moduleId: validatedModuleId,
+      updates: Object.keys(updates),
+    });
+
+    return module;
+  }
+
+  async deleteModule(moduleId: UUID): Promise<void> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    await this.deps.courseRepository.deleteModule(validatedModuleId);
+
+    this.logger.info('Module deleted', {
+      moduleId: validatedModuleId,
+    });
+  }
+
+  // Lesson CRUD methods for admin
+
+  async createLesson(input: any): Promise<any> {
+    const lesson = await this.deps.lessonRepository.create({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Lesson created', {
+      lessonId: lesson.id,
+      moduleId: input.moduleId,
+      title: lesson.title,
+    });
+
+    return lesson;
+  }
+
+  async updateLesson(lessonId: UUID, updates: any): Promise<any> {
+    const validatedLessonId = z.string().uuid().parse(lessonId);
+
+    const lesson = await this.deps.lessonRepository.update(validatedLessonId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Lesson updated', {
+      lessonId: validatedLessonId,
+      updates: Object.keys(updates),
+    });
+
+    return lesson;
+  }
+
+  async deleteLesson(lessonId: UUID): Promise<void> {
+    const validatedLessonId = z.string().uuid().parse(lessonId);
+
+    await this.deps.lessonRepository.delete(validatedLessonId);
+
+    this.logger.info('Lesson deleted', {
+      lessonId: validatedLessonId,
+    });
+  }
+
+  // Analytics methods for admin
+
+  async getCourseAnalytics(): Promise<any> {
+    // Implementation would depend on specific analytics requirements
+    // For now, return a placeholder
+    return {
+      totalCourses: 0,
+      totalStudents: 0,
+      completionRate: 0,
+      averageProgress: 0,
+    };
+  }
+
+  async getEngagementAnalytics(): Promise<any> {
+    // Implementation would depend on specific analytics requirements
+    // For now, return a placeholder
+    return {
+      totalComments: 0,
+      totalRatings: 0,
+      averageRating: 0,
+      activeUsers: 0,
+    };
   }
 
   private groupRepliesByComment(replies: LessonCommentReply[]): Map<UUID, LessonCommentReply[]> {

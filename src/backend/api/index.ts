@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
 import { randomUUID } from 'crypto'
 import { createAuthRouter } from './auth'
+import { createUploadRouter } from './upload'
 import { createHidraRouter } from './hidra'
 import { createAcademyRouter } from './academy'
 import { createCybervaultRouter } from './cybervault'
@@ -20,6 +21,7 @@ export function createApiRouter(services: ApiServices) {
 
   // Mount routers
   router.use('/auth', createAuthRouter(services))
+  router.use('/upload', createUploadRouter(services))
   router.use('/hidra', createHidraRouter(services))
   router.use('/academy', createAcademyRouter(services))
   router.use('/cybervault', createCybervaultRouter(services))

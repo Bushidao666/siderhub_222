@@ -26,6 +26,9 @@ export const surfaces = {
   successTint: 'rgba(0, 255, 0, 0.08)',
   errorTint: 'rgba(255, 51, 51, 0.08)',
   infoTint: 'rgba(0, 191, 255, 0.08)',
+  warningTint: 'rgba(255, 215, 0, 0.08)',
+  bgSecondary: '#1A1A1A',
+  bgTertiary: '#2A2A2A',
 };
 
 export const gradients = {

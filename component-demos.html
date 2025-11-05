@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiderHub - Componentes Demonstração</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .component-card { transition: all 0.3s ease; }
+        .component-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="gradient-bg text-white py-6">
+            <div class="max-w-7xl mx-auto px-4">
+                <h1 class="text-3xl font-bold mb-2">🎯 SiderHub Componentes Implementados</h1>
+                <p class="text-xl opacity-90">Demonstração dos principais componentes e features</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+
+            <!-- File Upload Component Demo -->
+            <section class="mb-12">
+                <div class="component-card bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <i class="fas fa-upload text-blue-600"></i>
+                        FileUpload Component
+                    </h2>
+                    <p class="text-gray-600 mb-4">Componente reutilizável para upload de arquivos com drag-and-drop e validação.</p>
+
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-2">Drag & drop arquivos aqui ou clique para selecionar</p>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-folder-open mr-2"></i> Selecionar Arquivos
+                        </button>
+                        <div class="mt-4 text-sm text-gray-500">
+                            <p>Formatos suportados: CSV, Imagens, Vídeos, Documentos</p>
+                            <p>Tamanho máximo: 100MB por arquivo</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 code-block">
+                        <div class="text-green-400">// Uso do Componente</div>
+                        <div class="text-white">import { FileUpload } from '../components/common';</div>
+                        <div class="text-white"></div>
+                        <div class="text-white">&lt;FileUpload</div>
+                        <div class="text-white ml-4">accept=".csv,.jpg,.png,.pdf"</div>
+                        <div class="text-white ml-4">maxSizeBytes={100 * 1024 * 1024}</div>
+                        <div class="text-white ml-4">onFilesChange={handleFilesChange}</div>
+                        <div class="text-white ml-4">multiple={false}</div>
+                        <div class="text-white">/&gt;</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CSV Import Component Demo -->
+            <section class="mb-12">
+                <div class="component-card bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <i class="fas fa-file-csv text-green-600"></i>
+                        CSV Import Component
+                    </h2>
+                    <p class="text-gray-600 mb-4">Componente especializado para importação de contatos via CSV com validação e preview.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Estrutura do CSV esperada:</h3>
+                            <div class="bg-gray-50 p-3 rounded text-sm">
+                                <div class="font-mono">name,phone,email,custom1,custom2,custom3</div>
+                                <div class="font-mono">"João Silva","+55 11 99999-9999","joao@email.com"...</div>
+                            </div>
+                        </div>
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Features:</h3>
+                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                <li>Validação de colunas obrigatórias (name, phone)</li>
+                                <li>Remoção automática de duplicados</li>
+                                <li>Preview dos contatos antes de importar</li>
+                                <li>Suporte para 3 campos customizados</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 code-block">
+                        <div class="text-green-400">// CSV Import para Contatos</div>
+                        <div class="text-white">import { CSVImport } from '../components/hidra/wizard';</div>
+                        <div class="text-white"></div>
+                        <div class="text-white">&lt;CSVImport</div>
+                        <div class="text-white ml-4">onImport={handleCSVImport}</div>
+                        <div class="text-white ml-4">requiredColumns={['name', 'phone']}</div>
+                        <div class="text-white ml-4">optionalColumns={['email', 'custom1', 'custom2', 'custom3']}</div>
+                        <div class="text-white">/&gt;</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Drip Content Configuration Demo -->
+            <section class="mb-12">
+                <div class="component-card bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <i class="fas fa-tint text-purple-600"></i>
+                        Drip Content Configuration
+                    </h2>
+                    <p class="text-gray-600 mb-4">Sistema completo de liberação gradual de conteúdo para cursos.</p>
+
+                    <div class="mb-6">
+                        <div class="flex gap-2 mb-4 border-b">
+                            <button class="px-4 py-2 border-b-2 border-purple-600 text-purple-600 font-semibold">Individual</button>
+                            <button class="px-4 py-2 text-gray-600 hover:text-purple-600">Em Massa</button>
+                            <button class="px-4 py-2 text-gray-600 hover:text-purple-600">Global</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Module 1 -->
+                        <div class="border rounded-lg p-4 bg-purple-50">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold">Módulo 1: Introdução ao Curso</h4>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" checked class="rounded">
+                                    <span>Ativado</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-lock-open"></i> Imediato
+                                </button>
+                                <button class="p-2 border rounded text-sm bg-purple-600 text-white">
+                                    <i class="fas fa-calendar"></i> Data Específica
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-clock"></i> X Dias
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-check-circle"></i> Pós Conclusão
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Module 2 -->
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold">Módulo 2: Fundamentos Básicos</h4>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" checked class="rounded">
+                                    <span>Ativado</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-lock-open"></i> Imediato
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-calendar"></i> Data Específica
+                                </button>
+                                <button class="p-2 border rounded text-sm bg-purple-600 text-white">
+                                    <i class="fas fa-clock"></i> 7 Dias
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-check-circle"></i> Pós Conclusão
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Module 3 -->
+                        <div class="border rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold">Módulo 3: Conteúdo Avançado</h4>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" checked class="rounded">
+                                    <span>Ativado</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-lock-open"></i> Imediato
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-calendar"></i> Data Específica
+                                </button>
+                                <button class="p-2 border rounded text-sm hover:bg-purple-100 transition-colors">
+                                    <i class="fas fa-clock"></i> X Dias
+                                </button>
+                                <button class="p-2 border rounded text-sm bg-purple-600 text-white">
+                                    <i class="fas fa-check-circle"></i> Após Módulo 2
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Campaign Wizard Demo -->
+            <section class="mb-12">
+                <div class="component-card bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                        <i class="fas fa-hat-wizard text-orange-600"></i>
+                        Enhanced Campaign Wizard
+                    </h2>
+                    <p class="text-gray-600 mb-4">Wizard de 5 passos para criação de campanhas no Hidra.</p>
+
+                    <div class="space-y-6">
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 text-center">
+                                <div class="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-2">1</div>
+                                <span class="text-sm font-medium">Informações</span>
+                            </div>
+                            <div class="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                            <div class="flex-1 text-center">
+                                <div class="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-2">2</div>
+                                <span class="text-sm font-medium">Segmentação</span>
+                            </div>
+                            <div class="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                            <div class="flex-1 text-center">
+                                <div class="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-2">3</div>
+                                <span class="text-sm font-medium">Template</span>
+                            </div>
+                            <div class="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                            <div class="flex-1 text-center">
+                                <div class="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-2">4</div>
+                                <span class="text-sm font-medium">Agendamento</span>
+                            </div>
+                            <div class="flex-1 h-0.5 bg-gray-300 mx-2"></div>
+                            <div class="flex-1 text-center">
+                                <div class="w-8 h-8 bg-gray-300 text-white rounded-full flex items-center justify-center mx-auto mb-2">5</div>
+                                <span class="text-sm font-medium text-gray-500">Revisão</span>
+                            </div>
+                        </div>
+
+                        <!-- Step Content -->
+                        <div class="border rounded-lg p-6">
+                            <h3 class="font-semibold mb-4">Passo 3: Template & Mídia</h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Template Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Selecionar Template</label>
+                                    <select class="w-full border rounded-lg px-3 py-2">
+                                        <option>Template - Boas Vindas</option>
+                                        <option>Template - Promoção</option>
+                                        <option>Template - Follow-up</option>
+                                    </select>
+                                </div>
+
+                                <!-- Media Upload -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Mídia Anexada (Opcional)</label>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-400 transition-colors">
+                                        <i class="fas fa-image text-2xl text-gray-400 mb-2"></i>
+                                        <p class="text-sm text-gray-600">Adicionar imagem ou vídeo</p>
+                                        <button class="text-sm text-orange-600 hover:text-orange-700">Selecionar Arquivo</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Message Preview -->
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium mb-2">Preview da Mensagem</label>
+                                <div class="bg-gray-50 border rounded-lg p-4">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fab fa-whatsapp text-green-600 text-xl"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm">Olá {nome}, tudo bem?</p>
+                                            <p class="text-sm">Esta é uma mensagem de boas-vindas para nossos novos contatos.</p>
+                                            <div class="bg-gray-200 rounded mt-2 h-32 flex items-center justify-center">
+                                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation -->
+                        <div class="flex justify-between">
+                            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-arrow-left mr-2"></i> Anterior
+                            </button>
+                            <button class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                                Próximo <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-8 mt-12">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-rocket text-4xl text-purple-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">SiderHub Componentes Demonstração</h3>
+                <p class="text-gray-300 mb-4">Preview interativo dos principais componentes implementados</p>
+                <div class="flex justify-center gap-6 text-sm">
+                    <div>
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="ml-2">FileUpload - Drag & Drop</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="ml-2">CSV Import - Validação</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="ml-2">Drip Content - 4 tipos de regras</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="ml-2">Campaign Wizard - 5 steps</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

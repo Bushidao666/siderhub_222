@@ -67,9 +67,149 @@ const lessonProgressTickBodySchema = z.object({
 })
 const LESSON_PROGRESS_INTERVAL_SECONDS = 10
 
+// Admin-only validation schemas
+const createCourseSchema = z.object({
+  title: z.string().min(3).max(200),
+  subtitle: z.string().max(300).optional(),
+  description: z.string().min(10).max(2000),
+  level: z.enum(['beginner', 'intermediate', 'advanced']),
+  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  visibility: z.enum(['public', 'private', 'members']).default('public'),
+  estimatedDurationMinutes: z.coerce.number().int().min(1).optional(),
+  tags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  isFeatured: z.boolean().default(false),
+  coverImage: z.string().url().optional(),
+  releaseDate: z.string().datetime().optional(),
+})
+
+const updateCourseSchema = createCourseSchema.partial()
+
+const createModuleSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().max(1000).optional(),
+  order: z.coerce.number().int().min(0),
+  durationMinutes: z.coerce.number().int().min(1),
+  dripReleaseAt: z.string().datetime().optional(),
+  dripDaysAfter: z.coerce.number().int().min(0).optional(),
+  dripAfterModuleId: z.string().uuid().optional(),
+})
+
+const createLessonSchema = z.object({
+  moduleId: z.string().uuid(),
+  title: z.string().min(3).max(200),
+  summary: z.string().max(500).optional(),
+  type: z.enum(['video', 'article', 'live', 'download', 'quiz']),
+  content: z.object({
+    video: z.object({
+      videoUrl: z.string().url(),
+      durationSeconds: z.coerce.number().int().min(1),
+      captionsUrl: z.string().url().optional(),
+      transcript: z.string().optional(),
+    }).optional(),
+    article: z.object({
+      bodyMarkdown: z.string().min(10),
+    }).optional(),
+    live: z.object({
+      scheduledAt: z.string().datetime(),
+      meetingUrl: z.string().url(),
+    }).optional(),
+    download: z.object({
+      assets: z.array(z.object({
+        fileUrl: z.string().url(),
+        fileName: z.string().min(1),
+        fileSizeBytes: z.coerce.number().int().min(1),
+      })).min(1),
+    }).optional(),
+    quiz: z.object({
+      questions: z.array(z.object({
+        id: z.string().uuid(),
+        question: z.string().min(1),
+        options: z.array(z.string()).min(2),
+        correctIndex: z.coerce.number().int().min(0),
+      })).min(1),
+    }).optional(),
+  }),
+  durationMinutes: z.coerce.number().int().min(1),
+  isPreview: z.boolean().default(false),
+  releaseAt: z.string().datetime().optional(),
+})
+
+const createResourceCategorySchema = z.object({
+  name: z.string().min(2).max(50),
+  description: z.string().max(200).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+})
+
+const createResourceSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().max(1000).optional(),
+  category: z.string().uuid(),
+  fileUrl: z.string().url(),
+  fileName: z.string().min(1),
+  fileSize: z.coerce.number().int().min(1),
+  fileType: z.string(),
+  tags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  isPublic: z.boolean().default(true),
+})
+
+const moderateCommentSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+  commentIds: z.array(z.string().uuid()).min(1),
+})
+
+const moderateSingleCommentSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+})
+
+const courseDripConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  type: z.enum(['none', 'date', 'enrollment']).default('none'),
+  releaseDate: z.string().datetime().optional(),
+  daysAfterEnrollment: z.coerce.number().int().min(0).optional(),
+})
+
+const complexDripConfigSchema = z.object({
+  courseId: z.string().uuid(),
+  modules: z.array(z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    dripRule: z.object({
+      type: z.enum(['date', 'days_after', 'after_completion', 'none']),
+      releaseDate: z.string().datetime().optional(),
+      daysAfter: z.coerce.number().int().min(0).optional(),
+      afterModuleId: z.string().uuid().optional(),
+    }),
+    enabled: z.boolean(),
+  })),
+  defaultDripType: z.enum(['date', 'days_after', 'after_completion', 'none']).default('days_after'),
+  enablePreviewContent: z.boolean().default(true),
+  unlockOnEnrollment: z.boolean().default(true),
+  autoUnlockFirstModule: z.boolean().default(true),
+})
+
+const moduleDripConfigSchema = z.object({
+  type: z.enum(['none', 'date', 'days_after', 'after_completion']).default('none'),
+  releaseDate: z.string().datetime().optional(),
+  daysAfter: z.coerce.number().int().min(0).optional(),
+  afterModuleId: z.string().uuid().optional(),
+})
+
+const bulkDripConfigSchema = z.object({
+  moduleConfigs: z.array(z.object({
+    moduleId: z.string().uuid(),
+    config: moduleDripConfigSchema,
+  })),
+})
+
 export function createAcademyRouter(services: ApiServices) {
   const router = Router()
   const authGuard = createAuthGuard(services.tokenService)
+
+  // Admin endpoints - these should be moved to a separate admin academy router
+  // but for now we'll add them here with basic auth validation
+  // Role validation would need to be implemented in the service layer
+
+  const adminGuard = createAuthGuard(services.tokenService)
 
   router.get('/courses', authGuard, async (req: Request, res: Response, next: NextFunction) => {
     const parsed = listQuerySchema.safeParse(req.query)
@@ -377,7 +517,464 @@ export function createAcademyRouter(services: ApiServices) {
     },
   )
 
-  
+  // ==================== ADMIN ENDPOINTS ====================
+
+  // Course Management
+  router.post('/admin/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createCourseSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const course = await services.academyService.createCourse({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID inválido')
+    }
+
+    const parsed = updateCourseSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const course = await services.academyService.updateCourse(courseId.data, parsed.data)
+      return respondSuccess(res, 200, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID inválido')
+    }
+
+    try {
+      await services.academyService.deleteCourse(courseId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Module Management
+  router.post('/admin/courses/:courseId/modules', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    const parsed = createModuleSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const module = await services.academyService.createModule({
+        ...parsed.data,
+        courseId: courseId.data,
+      })
+      return respondSuccess(res, 201, module)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/modules/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const moduleId = uuidSchema.safeParse(req.params.id)
+    if (!moduleId.success) {
+      return respondValidationError(res, 'ID do módulo inválido')
+    }
+
+    const parsed = createModuleSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const module = await services.academyService.updateModule(moduleId.data, parsed.data)
+      return respondSuccess(res, 200, module)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/modules/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const moduleId = uuidSchema.safeParse(req.params.id)
+    if (!moduleId.success) {
+      return respondValidationError(res, 'ID do módulo inválido')
+    }
+
+    try {
+      await services.academyService.deleteModule(moduleId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Lesson Management
+  router.post('/admin/lessons', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createLessonSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const lesson = await services.academyService.createLesson({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, lesson)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/lessons/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const lessonId = uuidSchema.safeParse(req.params.id)
+    if (!lessonId.success) {
+      return respondValidationError(res, 'ID da lição inválido')
+    }
+
+    const parsed = createLessonSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const lesson = await services.academyService.updateLesson(lessonId.data, parsed.data)
+      return respondSuccess(res, 200, lesson)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/lessons/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const lessonId = uuidSchema.safeParse(req.params.id)
+    if (!lessonId.success) {
+      return respondValidationError(res, 'ID da lição inválido')
+    }
+
+    try {
+      await services.academyService.deleteLesson(lessonId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Comment Moderation
+  router.get('/admin/comments/pending', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = commentsQuerySchema.safeParse(req.query)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Parâmetros inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const comments = await services.academyService.getPendingComments({
+        page: parsed.data.page,
+        pageSize: parsed.data.pageSize,
+        after: parsed.data.after,
+      })
+      return respondSuccess(res, 200, comments)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/comments/:id/moderate', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const commentId = uuidSchema.safeParse(req.params.id)
+    if (!commentId.success) {
+      return respondValidationError(res, 'ID do comentário inválido')
+    }
+
+    const parsed = moderateSingleCommentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const comment = await services.academyService.moderateComment({
+        commentId: commentId.data,
+        moderatedBy: req.user!.userId,
+        status: parsed.data.status,
+      })
+      return respondSuccess(res, 200, comment)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/comments/bulk-moderate', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = moderateCommentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.bulkModerateComments({
+        commentIds: parsed.data.commentIds,
+        moderatedBy: req.user!.userId,
+        status: parsed.data.status,
+      })
+      return respondSuccess(res, 200, { moderated: parsed.data.commentIds.length })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Resource Categories Management
+  router.get('/admin/resources/categories', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const categories = await services.cybervaultService.getResourceCategories()
+      return respondSuccess(res, 200, categories)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.post('/admin/resources/categories', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createResourceCategorySchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const category = await services.cybervaultService.createResourceCategory({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+      })
+      return respondSuccess(res, 201, category)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/resources/categories/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const categoryId = uuidSchema.safeParse(req.params.id)
+    if (!categoryId.success) {
+      return respondValidationError(res, 'ID da categoria inválido')
+    }
+
+    const parsed = createResourceCategorySchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const category = await services.cybervaultService.updateResourceCategory(categoryId.data, parsed.data)
+      return respondSuccess(res, 200, category)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Resource Management
+  router.post('/admin/resources', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = createResourceSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const resource = await services.cybervaultService.createResource({
+        ...parsed.data,
+        createdBy: req.user!.userId,
+        downloadCount: 0,
+      })
+      return respondSuccess(res, 201, resource)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.put('/admin/resources/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const resourceId = uuidSchema.safeParse(req.params.id)
+    if (!resourceId.success) {
+      return respondValidationError(res, 'ID do recurso inválido')
+    }
+
+    const parsed = createResourceSchema.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const resource = await services.cybervaultService.updateResource(resourceId.data, parsed.data)
+      return respondSuccess(res, 200, resource)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.delete('/admin/resources/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const resourceId = uuidSchema.safeParse(req.params.id)
+    if (!resourceId.success) {
+      return respondValidationError(res, 'ID do recurso inválido')
+    }
+
+    try {
+      await services.cybervaultService.deleteResource(resourceId.data)
+      return respondSuccess(res, 204, null)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Analytics
+  router.get('/admin/analytics/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const analytics = await services.academyService.getCourseAnalytics()
+      return respondSuccess(res, 200, analytics)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  router.get('/admin/analytics/engagement', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const analytics = await services.academyService.getEngagementAnalytics()
+      return respondSuccess(res, 200, analytics)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Get course details (for drip content management)
+  router.get('/admin/academy/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    try {
+      const course = await services.academyService.getCourse(courseId.data)
+      if (!course) {
+        return respondError(res, 404, { code: 'NOT_FOUND', message: 'Curso não encontrado' })
+      }
+      return respondSuccess(res, 200, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // List courses (for drip content course selection)
+  router.get('/admin/academy/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = listQuerySchema.safeParse(req.query)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Parâmetros inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const courses = await services.academyService.getCourses(parsed.data)
+      return respondSuccess(res, 200, courses)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Get course modules (for drip content management)
+  router.get('/admin/academy/courses/:courseId/modules', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    try {
+      const modules = await services.academyService.getCourseModules(courseId.data)
+      return respondSuccess(res, 200, modules)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Update course drip configuration
+  router.put('/admin/academy/courses/:courseId/drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    // Try to parse as complex drip config first (from our DripContentConfig component)
+    const complexParsed = complexDripConfigSchema.safeParse(req.body)
+    if (complexParsed.success) {
+      try {
+        await services.academyService.updateComplexDripConfig(courseId.data, complexParsed.data)
+        return respondSuccess(res, 200, { updated: true })
+      } catch (err) {
+        return next(err)
+      }
+    }
+
+    // Fallback to simple drip config for backward compatibility
+    const simpleParsed = courseDripConfigSchema.safeParse(req.body)
+    if (!simpleParsed.success) {
+      return respondValidationError(res, 'Dados inválidos', simpleParsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.updateCourseDripConfig(courseId.data, simpleParsed.data)
+      return respondSuccess(res, 200, { updated: true })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Update module drip configuration
+  router.put('/admin/academy/courses/:courseId/modules/:moduleId/drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    const moduleId = uuidSchema.safeParse(req.params.moduleId)
+
+    if (!courseId.success || !moduleId.success) {
+      return respondValidationError(res, 'IDs inválidos')
+    }
+
+    const parsed = moduleDripConfigSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.updateModuleDripConfig(moduleId.data, parsed.data)
+      return respondSuccess(res, 200, { updated: true })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Bulk update module drip configurations
+  router.put('/admin/academy/courses/:courseId/modules/bulk-drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    const parsed = bulkDripConfigSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.bulkUpdateModuleDripConfigs(parsed.data.moduleConfigs)
+      return respondSuccess(res, 200, { updated: parsed.data.moduleConfigs.length })
+    } catch (err) {
+      return next(err)
+    }
+  })
 
   return router
 }

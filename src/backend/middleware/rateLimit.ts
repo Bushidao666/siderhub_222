@@ -67,3 +67,9 @@ export const campaignLimiter = createLimiter({
   limit: 60,
   windowMs: 10 * 60 * 1000,
 })
+
+export const uploadLimiter = createLimiter({
+  message: 'Limite de uploads atingido. Aguarde antes de fazer novos uploads.',
+  limit: 10,
+  windowMs: 60 * 60 * 1000, // 10 uploads per hour
+})
