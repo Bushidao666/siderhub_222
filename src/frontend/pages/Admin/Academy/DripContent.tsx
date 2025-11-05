@@ -331,11 +331,23 @@ export const AdminAcademyDripContent = ({ courseId, onBack }: DripContentManagem
       </header>
 
       <DripContentConfig
-        course={targetCourse}
-        modules={modulesQuery.data || []}
+        course={targetCourse ? {
+          id: targetCourse.id,
+          title: targetCourse.title,
+          description: targetCourse.description,
+          level: targetCourse.level,
+          status: targetCourse.status,
+          tags: targetCourse.tags,
+          coverImage: targetCourse.coverImage,
+          totalLessons: targetCourse.totalLessons,
+          estimatedDurationMinutes: targetCourse.estimatedDurationMinutes,
+          createdAt: targetCourse.createdAt,
+          updatedAt: targetCourse.updatedAt,
+          modules: modulesQuery.data || []
+        } : undefined}
         loading={modulesQuery.isLoading}
         error={modulesQuery.error ? mapApiError(modulesQuery.error) : null}
-        onSave={handleDripConfigSave}
+        onConfigUpdate={handleDripConfigSave}
         onRetry={handleRetry}
       />
     </div>
