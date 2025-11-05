@@ -303,7 +303,7 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
                     className="flex items-center gap-3 rounded-lg border border-[var(--file-border)] bg-[var(--file-bg)] p-3"
                     style={{
                       '--file-border': colors.borderPrimary,
-                      '--file-bg': surfaces.bgSecondary,
+                      '--file-bg': colors.bgSecondary,
                     } as CSSProperties}
                   >
                     <div className="flex-shrink-0 text-lg">
