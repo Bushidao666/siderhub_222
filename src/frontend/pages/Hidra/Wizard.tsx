@@ -81,14 +81,19 @@ export const HidraWizard = () => {
   const isFinalStep = currentStep === steps.length - 1;
 
   const canProceed = useMemo(() => {
-    if (currentStep === 0) {
-      return Boolean(selectedSegment);
+    switch (currentStep) {
+      case 0: // Basic info
+        return Boolean(campaignForm.name.trim());
+      case 1: // Segment
+        return Boolean(selectedSegment);
+      case 2: // Template & Media
+        return Boolean(selectedTemplate);
+      case 3: // Advanced schedule
+        return true; // Schedule is optional
+      default:
+        return true;
     }
-    if (currentStep === 1) {
-      return Boolean(selectedTemplate);
-    }
-    return true;
-  }, [currentStep, selectedSegment, selectedTemplate]);
+  }, [currentStep, campaignForm.name, selectedSegment, selectedTemplate]);
 
   const handleSelectSegment = (segment: ContactSegment) => {
     setSelectedSegment(segment);
