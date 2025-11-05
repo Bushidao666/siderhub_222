@@ -24,14 +24,32 @@ const steps = [
 
 type Step = (typeof steps)[number];
 
-const initialScheduleForm = {
+const initialCampaignForm = {
   name: '',
   description: '',
-  scheduledAt: '',
-  maxMessagesPerMinute: 60,
   externalId: '',
 };
 
+const initialScheduleForm = {
+  scheduledAt: '',
+  maxMessagesPerMinute: 60,
+  timeWindows: {
+    enabled: false,
+    startTime: '09:00',
+    endTime: '18:00',
+  },
+  daysOfWeek: {
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true,
+    saturday: false,
+    sunday: false,
+  },
+};
+
+type CampaignFormState = typeof initialCampaignForm;
 type ScheduleFormState = typeof initialScheduleForm;
 
 export const HidraWizard = () => {
