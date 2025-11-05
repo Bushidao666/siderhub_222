@@ -835,5 +835,115 @@ export function createAcademyRouter(services: ApiServices) {
     }
   })
 
+  // Get course details (for drip content management)
+  router.get('/admin/academy/courses/:id', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.id)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    try {
+      const course = await services.academyService.getCourse(courseId.data)
+      if (!course) {
+        return respondError(res, 404, { code: 'NOT_FOUND', message: 'Curso não encontrado' })
+      }
+      return respondSuccess(res, 200, course)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // List courses (for drip content course selection)
+  router.get('/admin/academy/courses', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = listQuerySchema.safeParse(req.query)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Parâmetros inválidos', parsed.error.flatten())
+    }
+
+    try {
+      const courses = await services.academyService.getCourses(parsed.data)
+      return respondSuccess(res, 200, courses)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Get course modules (for drip content management)
+  router.get('/admin/academy/courses/:courseId/modules', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    try {
+      const modules = await services.academyService.getCourseModules(courseId.data)
+      return respondSuccess(res, 200, modules)
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Update course drip configuration
+  router.put('/admin/academy/courses/:courseId/drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    const parsed = courseDripConfigSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.updateCourseDripConfig(courseId.data, parsed.data)
+      return respondSuccess(res, 200, { updated: true })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Update module drip configuration
+  router.put('/admin/academy/courses/:courseId/modules/:moduleId/drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    const moduleId = uuidSchema.safeParse(req.params.moduleId)
+
+    if (!courseId.success || !moduleId.success) {
+      return respondValidationError(res, 'IDs inválidos')
+    }
+
+    const parsed = moduleDripConfigSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.updateModuleDripConfig(moduleId.data, parsed.data)
+      return respondSuccess(res, 200, { updated: true })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
+  // Bulk update module drip configurations
+  router.put('/admin/academy/courses/:courseId/modules/bulk-drip-config', adminGuard, async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = uuidSchema.safeParse(req.params.courseId)
+    if (!courseId.success) {
+      return respondValidationError(res, 'ID do curso inválido')
+    }
+
+    const parsed = bulkDripConfigSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    }
+
+    try {
+      await services.academyService.bulkUpdateModuleDripConfigs(parsed.data.moduleConfigs)
+      return respondSuccess(res, 200, { updated: parsed.data.moduleConfigs.length })
+    } catch (err) {
+      return next(err)
+    }
+  })
+
   return router
 }
