@@ -112,14 +112,13 @@ export const AdminAcademyDripContent = ({ courseId, onBack }: DripContentManagem
     }
   }, [onBack, courseId]);
 
-  const handleDripConfigSave = useCallback(async (config: any, scope: 'course' | 'module', moduleId?: string) => {
+  const handleDripConfigSave = useCallback(async (config: any) => {
     const targetCourseId = selectedCourse?.id || courseId;
     if (!targetCourseId) return;
 
     try {
       await updateDripConfigMutation.mutateAsync({
         courseId: targetCourseId,
-        moduleId: scope === 'module' ? moduleId : undefined,
         config,
       });
     } catch (error) {
