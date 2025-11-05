@@ -189,6 +189,37 @@ export const HidraWizard = () => {
   };
 
   const renderStepContent = (step: Step) => {
+    // Basic Information Step
+    if (step.id === 'basic') {
+      return (
+        <Card variant="outlined">
+          <CardTitle>Informações Básicas da Campanha</CardTitle>
+          <CardContent className="space-y-4">
+            <Input
+              label="Nome da Campanha *"
+              value={campaignForm.name}
+              onChange={(e) => handleCampaignFormChange('name', e.target.value)}
+              placeholder="Ex: Promoção de Verão 2024"
+              required
+            />
+            <Input
+              label="Descrição (opcional)"
+              value={campaignForm.description}
+              onChange={(e) => handleCampaignFormChange('description', e.target.value)}
+              placeholder="Descreva o objetivo e detalhes da campanha"
+            />
+            <Input
+              label="ID Externo (opcional)"
+              value={campaignForm.externalId}
+              onChange={(e) => handleCampaignFormChange('externalId', e.target.value)}
+              placeholder="ID para integração com sistemas externos"
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Segment Selection Step
     if (step.id === 'segment') {
       return (
         <SegmentSelector
@@ -204,6 +235,7 @@ export const HidraWizard = () => {
       );
     }
 
+    // Template & Media Upload Step
     if (step.id === 'template') {
       return (
         <TemplateEditor
@@ -217,22 +249,209 @@ export const HidraWizard = () => {
           onRetry={() => {
             void templatesQuery.refetch();
           }}
+          selectedMedia={selectedMedia}
+          onMediaSelect={handleMediaSelect}
         />
       );
     }
 
+    // Advanced Schedule Step
+    if (step.id === 'schedule') {
+      return (
+        <Card variant="outlined">
+          <CardTitle>Configurações de Agendamento Avançado</CardTitle>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Data e Hora de Agendamento"
+                type="datetime-local"
+                value={scheduleForm.scheduledAt}
+                onChange={(e) => handleScheduleFormChange('scheduledAt', e.target.value)}
+              />
+              <Input
+                label="Mensagens por Minuto"
+                type="number"
+                value={scheduleForm.maxMessagesPerMinute}
+                onChange={(e) => handleScheduleFormChange('maxMessagesPerMinute', parseInt(e.target.value) || 1)}
+                min="1"
+                max="1000"
+              />
+            </div>
+
+            {/* Time Windows */}
+            <Card variant="outlined">
+              <CardTitle>Janelas de Horário</CardTitle>
+              <CardContent className="space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={scheduleForm.timeWindows.enabled}
+                    onChange={(e) => handleScheduleFormChange('timeWindows', {
+                      ...scheduleForm.timeWindows,
+                      enabled: e.target.checked,
+                    })}
+                    className="h-4 w-4 rounded border border-[var(--checkbox-border)] bg-[var(--checkbox-bg)] text-[var(--checkbox-checked)] focus:ring-[var(--checkbox-focus)]"
+                    style={{
+                      '--checkbox-border': colors.borderPrimary,
+                      '--checkbox-bg': colors.bgSecondary,
+                      '--checkbox-checked': colors.accentSuccess,
+                      '--checkbox-focus': colors.borderAccent,
+                    } as CSSProperties}
+                  />
+                  <span className="text-sm" style={{ color: colors.textPrimary }}>
+                    Limitar envios para horários específicos
+                  </span>
+                </label>
+
+                {scheduleForm.timeWindows.enabled && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      label="Horário de Início"
+                      type="time"
+                      value={scheduleForm.timeWindows.startTime}
+                      onChange={(e) => handleScheduleFormChange('timeWindows', {
+                        ...scheduleForm.timeWindows,
+                        startTime: e.target.value,
+                      })}
+                    />
+                    <Input
+                      label="Horário de Fim"
+                      type="time"
+                      value={scheduleForm.timeWindows.endTime}
+                      onChange={(e) => handleScheduleFormChange('timeWindows', {
+                        ...scheduleForm.timeWindows,
+                        endTime: e.target.value,
+                      })}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Days of Week */}
+            {scheduleForm.timeWindows.enabled && (
+              <Card variant="outlined">
+                <CardTitle>Dias da Semana</CardTitle>
+                <CardContent>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {Object.entries(scheduleForm.daysOfWeek).map(([day, enabled]) => (
+                      <label key={day} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(e) => handleScheduleFormChange('daysOfWeek', {
+                            ...scheduleForm.daysOfWeek,
+                            [day]: e.target.checked,
+                          })}
+                          className="h-4 w-4 rounded border border-[var(--checkbox-border)] bg-[var(--checkbox-bg)] text-[var(--checkbox-checked)] focus:ring-[var(--checkbox-focus)]"
+                          style={{
+                            '--checkbox-border': colors.borderPrimary,
+                            '--checkbox-bg': colors.bgSecondary,
+                            '--checkbox-checked': colors.accentSuccess,
+                            '--checkbox-focus': colors.borderAccent,
+                          } as CSSProperties}
+                        />
+                        <span className="text-sm capitalize" style={{ color: colors.textPrimary }}>
+                          {day === 'monday' ? 'Segunda-feira' :
+                           day === 'tuesday' ? 'Terça-feira' :
+                           day === 'wednesday' ? 'Quarta-feira' :
+                           day === 'thursday' ? 'Quinta-feira' :
+                           day === 'friday' ? 'Sexta-feira' :
+                           day === 'saturday' ? 'Sábado' :
+                           'Domingo'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Review & Confirmation Step
     return (
-      <ScheduleReview
-        form={form}
-        onFormChange={handleFormChange}
-        onSubmit={handleSubmit}
-        submitting={createCampaignMutation.isPending}
-        canSubmit={Boolean(form.name && selectedSegment && selectedTemplate)}
-        segment={selectedSegment}
-        template={selectedTemplate}
-        previewBody={messagePreview}
-        submissionError={submissionError}
-      />
+      <Card variant="outlined">
+        <CardTitle>Revisão e Confirmação</CardTitle>
+        <CardContent className="space-y-6">
+          {/* Campaign Summary */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium" style={{ color: colors.primary }}>
+              Resumo da Campanha
+            </h3>
+            <div className="rounded-lg border border-[var(--summary-border)] bg-[var(--summary-bg)] p-4 space-y-2"
+              style={{
+                '--summary-border': colors.borderPrimary,
+                '--summary-bg': surfaces.bgSecondary,
+              } as CSSProperties}>
+              <div className="flex justify-between">
+                <span style={{ color: colors.textSecondary }}>Nome:</span>
+                <span style={{ color: colors.textPrimary }}>{campaignForm.name}</span>
+              </div>
+              {campaignForm.description && (
+                <div className="flex justify-between">
+                  <span style={{ color: colors.textSecondary }}>Descrição:</span>
+                  <span style={{ color: colors.textPrimary }}>{campaignForm.description}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span style={{ color: colors.textSecondary }}>Segmento:</span>
+                <span style={{ color: colors.textPrimary }}>{selectedSegment?.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: colors.textSecondary }}>Template:</span>
+                <span style={{ color: colors.textPrimary }}>{selectedTemplate?.title}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: colors.textSecondary }}>Mensagens/min:</span>
+                <span style={{ color: colors.textPrimary }}>{scheduleForm.maxMessagesPerMinute}</span>
+              </div>
+              {scheduleForm.scheduledAt && (
+                <div className="flex justify-between">
+                  <span style={{ color: colors.textSecondary }}>Agendado para:</span>
+                  <span style={{ color: colors.textPrimary }}>
+                    {new Date(scheduleForm.scheduledAt).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+              )}
+              {selectedMedia && (
+                <div className="flex justify-between">
+                  <span style={{ color: colors.textSecondary }}>Mídia anexada:</span>
+                  <span style={{ color: colors.textPrimary }}>{selectedMedia.name}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentStep(currentStep - 1)}
+              disabled={createCampaignMutation.isPending}
+            >
+              Voltar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              loading={createCampaignMutation.isPending}
+              disabled={!campaignForm.name.trim() || !selectedSegment || !selectedTemplate}
+            >
+              Criar Campanha
+            </Button>
+          </div>
+
+          {submissionError && (
+            <div className="rounded-lg border border-[var(--error-border)] bg-[var(--error-bg)] p-4 text-sm"
+              style={{ '--error-border': colors.accentError, '--error-bg': surfaces.errorTint } as CSSProperties}>
+              <span style={{ color: colors.accentError }}>{submissionError}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
