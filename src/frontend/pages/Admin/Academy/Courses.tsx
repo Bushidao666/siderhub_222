@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { colors, surfaces, typography } from '../../../../shared/design/tokens';
 import type { CourseMeta } from '../../../../shared/types/academy.types';
 import { Button, Card, CardContent, CardTitle, Input } from '../../../components/common';
