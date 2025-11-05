@@ -168,6 +168,25 @@ const courseDripConfigSchema = z.object({
   daysAfterEnrollment: z.coerce.number().int().min(0).optional(),
 })
 
+const complexDripConfigSchema = z.object({
+  courseId: z.string().uuid(),
+  modules: z.array(z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    dripRule: z.object({
+      type: z.enum(['date', 'days_after', 'after_completion', 'none']),
+      releaseDate: z.string().datetime().optional(),
+      daysAfter: z.coerce.number().int().min(0).optional(),
+      afterModuleId: z.string().uuid().optional(),
+    }),
+    enabled: z.boolean(),
+  })),
+  defaultDripType: z.enum(['date', 'days_after', 'after_completion', 'none']).default('days_after'),
+  enablePreviewContent: z.boolean().default(true),
+  unlockOnEnrollment: z.boolean().default(true),
+  autoUnlockFirstModule: z.boolean().default(true),
+})
+
 const moduleDripConfigSchema = z.object({
   type: z.enum(['none', 'date', 'days_after', 'after_completion']).default('none'),
   releaseDate: z.string().datetime().optional(),
