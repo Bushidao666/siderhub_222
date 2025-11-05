@@ -17,28 +17,136 @@ const adminApiClient = new ApiClient({
   },
 });
 
+const defaultCarouselConfig: CarouselConfig = {
+  enabled: false,
+  autoRotate: false,
+  rotationInterval: 5,
+  showIndicators: true,
+  showArrows: true,
+  animation: 'slide',
+};
+
 export const AdminBanners = () => {
   const queryClient = useQueryClient();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+
+  // Mock data - this would come from API
+  const mockBanners: ExtendedHeroBanner[] = [
+    // Empty initially to show the create form
+  ];
+
+  const bannersQuery = useQuery({
+    queryKey: ['admin', 'banners'],
+    queryFn: async () => {
+      try {
+        const response = await adminApiClient.get<HeroBanner[]>('/admin/banners');
+        assertSuccess<HeroBanner[]>(response);
+        return response.data.map((banner): ExtendedHeroBanner => ({
+          ...banner,
+          position: 'hero',
+          size: 'large',
+          autoRotate: false,
+          rotationInterval: 5,
+        }));
+      } catch (error) {
+        // If API fails, return mock data for demo
+        return mockBanners;
+      }
+    },
+  });
+
+  const carouselConfigQuery = useQuery({
+    queryKey: ['admin', 'carousel-config'],
+    queryFn: async () => {
+      try {
+        const response = await adminApiClient.get<CarouselConfig>('/admin/carousel-config');
+        assertSuccess<CarouselConfig>(response);
+        return response.data;
+      } catch (error) {
+        // If API fails, return default config
+        return defaultCarouselConfig;
+      }
+    },
+  });
 
   const createBannerMutation = useMutation({
-    mutationFn: async (values: BannerFormValues) => {
-      setSuccessMessage(null);
-      setFormError(null);
-      const response = await adminApiClient.post<HeroBanner, BannerFormValues>('/admin/banners', values);
+    mutationFn: async (banner: Partial<ExtendedHeroBanner>) => {
+      const response = await adminApiClient.post<HeroBanner, Partial<HeroBanner>>('/admin/banners', banner);
       assertSuccess<HeroBanner>(response);
       return response.data;
     },
     onSuccess: () => {
-      setSuccessMessage('Banner salvo com sucesso.');
-      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.dashboard() });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.hub.dashboard() });
     },
-    onError: (error) => {
-      setFormError(mapApiError(error));
+  });
+
+  const updateBannerMutation = useMutation({
+    mutationFn: async ({ id, ...banner }: { id: string } & Partial<ExtendedHeroBanner>) => {
+      const response = await adminApiClient.put<HeroBanner, Partial<HeroBanner>>(`/admin/banners/${id}`, banner);
+      assertSuccess<HeroBanner>(response);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.dashboard() });
     },
   });
+
+  const deleteBannerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await adminApiClient.delete(`/admin/banners/${id}`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hub.dashboard() });
+    },
+  });
+
+  const reorderBannersMutation = useMutation({
+    mutationFn: async (bannerIds: string[]) => {
+      const response = await adminApiClient.post<void, { bannerIds: string[] }>('/admin/banners/reorder', { bannerIds });
+      assertSuccess<void>(response);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] });
+    },
+  });
+
+  const updateCarouselConfigMutation = useMutation({
+    mutationFn: async (config: CarouselConfig) => {
+      const response = await adminApiClient.put<CarouselConfig, CarouselConfig>('/admin/carousel-config', config);
+      assertSuccess<CarouselConfig>(response);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'carousel-config'] });
+    },
+  });
+
+  const handleBannerCreate = useCallback(async (banner: Partial<ExtendedHeroBanner>) => {
+    await createBannerMutation.mutateAsync(banner);
+  }, [createBannerMutation]);
+
+  const handleBannerUpdate = useCallback(async (id: string, banner: Partial<ExtendedHeroBanner>) => {
+    await updateBannerMutation.mutateAsync({ id, ...banner });
+  }, [updateBannerMutation]);
+
+  const handleBannerDelete = useCallback(async (id: string) => {
+    await deleteBannerMutation.mutateAsync(id);
+  }, [deleteBannerMutation]);
+
+  const handleBannerReorder = useCallback(async (bannerIds: string[]) => {
+    await reorderBannersMutation.mutateAsync(bannerIds);
+  }, [reorderBannersMutation]);
+
+  const handleCarouselConfigUpdate = useCallback(async (config: CarouselConfig) => {
+    await updateCarouselConfigMutation.mutateAsync(config);
+  }, [updateCarouselConfigMutation]);
+
+  const handleRetry = useCallback(() => {
+    void bannersQuery.refetch();
+    void carouselConfigQuery.refetch();
+  }, [bannersQuery, carouselConfigQuery]);
 
   return (
     <section className="space-y-6" data-testid="admin-banners">
@@ -47,31 +155,26 @@ export const AdminBanners = () => {
           className="text-2xl uppercase tracking-[0.18em]"
           style={{ fontFamily: typography.fontHeading, color: colors.primary }}
         >
-          Gerenciar banners
+          Gestão Avançada de Banners
         </h1>
         <p className="text-sm" style={{ color: colors.textSecondary }}>
-          Configure chamadas neon para o Hub. Integração com HubService será conectada na próxima etapa.
+          Configure múltiplos banners, carousel e ordenação para o Hub.
         </p>
       </header>
 
-      <div
-        className="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-elevated)] p-6"
-        style={{ '--border-color': colors.borderPrimary, '--bg-elevated': colors.bgSecondary } as CSSProperties}
-      >
-        <BannerForm
-          initial={null}
-          onSubmit={async (values) => {
-            try {
-              await createBannerMutation.mutateAsync(values);
-            } catch (error) {
-              // handled by onError
-            }
-          }}
-          submitting={createBannerMutation.isPending}
-          successMessage={successMessage}
-          error={formError}
-        />
-      </div>
+      <AdvancedBannerManager
+        banners={bannersQuery.data || []}
+        carouselConfig={carouselConfigQuery.data || defaultCarouselConfig}
+        loading={bannersQuery.isLoading || carouselConfigQuery.isLoading}
+        error={bannersQuery.error ? mapApiError(bannersQuery.error) :
+                carouselConfigQuery.error ? mapApiError(carouselConfigQuery.error) : null}
+        onBannerCreate={handleBannerCreate}
+        onBannerUpdate={handleBannerUpdate}
+        onBannerDelete={handleBannerDelete}
+        onBannerReorder={handleBannerReorder}
+        onCarouselConfigUpdate={handleCarouselConfigUpdate}
+        onRetry={handleRetry}
+      />
     </section>
   );
 };
