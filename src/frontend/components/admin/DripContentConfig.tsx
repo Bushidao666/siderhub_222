@@ -146,7 +146,7 @@ export const DripContentConfig = ({
   });
 
   // Sync with query data
-  useState(() => {
+  useEffect(() => {
     if (configQuery.data) {
       setConfig(configQuery.data);
     }
