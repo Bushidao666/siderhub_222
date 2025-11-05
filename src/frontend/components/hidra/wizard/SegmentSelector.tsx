@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react';
+import { useState } from 'react';
 
 import { colors, glows, surfaces } from '../../../../shared/design/tokens';
 import type { ContactSegment } from '../../../../shared/types';
 import { Button, Card, CardContent, CardTitle } from '../../common';
+import { CSVImport } from './CSVImport';
 
 type SegmentSelectorProps = {
   segments: ContactSegment[];
