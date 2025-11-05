@@ -12,6 +12,7 @@ type CoursesManagementProps = {
   onCourseCreate?: () => void;
   onCourseEdit?: (course: CourseMeta) => void;
   onCourseDelete?: (courseId: string) => void;
+  onDripConfig?: (course: CourseMeta) => void;
   onRetry?: () => void;
 };
 
