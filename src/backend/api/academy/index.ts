@@ -909,13 +909,25 @@ export function createAcademyRouter(services: ApiServices) {
       return respondValidationError(res, 'ID do curso inválido')
     }
 
-    const parsed = courseDripConfigSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return respondValidationError(res, 'Dados inválidos', parsed.error.flatten())
+    // Try to parse as complex drip config first (from our DripContentConfig component)
+    const complexParsed = complexDripConfigSchema.safeParse(req.body)
+    if (complexParsed.success) {
+      try {
+        await services.academyService.updateComplexDripConfig(courseId.data, complexParsed.data)
+        return respondSuccess(res, 200, { updated: true })
+      } catch (err) {
+        return next(err)
+      }
+    }
+
+    // Fallback to simple drip config for backward compatibility
+    const simpleParsed = courseDripConfigSchema.safeParse(req.body)
+    if (!simpleParsed.success) {
+      return respondValidationError(res, 'Dados inválidos', simpleParsed.error.flatten())
     }
 
     try {
-      await services.academyService.updateCourseDripConfig(courseId.data, parsed.data)
+      await services.academyService.updateCourseDripConfig(courseId.data, simpleParsed.data)
       return respondSuccess(res, 200, { updated: true })
     } catch (err) {
       return next(err)
