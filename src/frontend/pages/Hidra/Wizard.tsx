@@ -56,8 +56,10 @@ export const HidraWizard = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedSegment, setSelectedSegment] = useState<ContactSegment | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [messagePreview, setMessagePreview] = useState('');
-  const [form, setForm] = useState<ScheduleFormState>(initialScheduleForm);
+  const [campaignForm, setCampaignForm] = useState<CampaignFormState>(initialCampaignForm);
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(initialScheduleForm);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
