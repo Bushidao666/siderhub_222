@@ -804,6 +804,60 @@ export class AcademyService {
     return updated;
   }
 
+  async moderateComment(input: { commentId: UUID; moderatedBy: UUID; status: 'approved' | 'rejected' }): Promise<LessonComment> {
+    const payload = moderateCommentSchema.parse({
+      commentId: input.commentId,
+      moderatorId: input.moderatedBy,
+    });
+
+    const comment = await this.deps.lessonCommentRepository.findById(payload.commentId);
+    if (!comment) {
+      throw new AppError({ code: 'ACADEMY_COMMENT_NOT_FOUND', message: 'Comentário não encontrado', statusCode: 404 });
+    }
+
+    if ((input.status === 'approved' && comment.moderationStatus === 'approved' && !comment.pendingModeration) ||
+        (input.status === 'rejected' && comment.moderationStatus === 'rejected' && !comment.pendingModeration)) {
+      return comment;
+    }
+
+    const moderatedAt = this.nowIso();
+    const updated = await this.deps.lessonCommentRepository.updateModeration({
+      commentId: payload.commentId,
+      moderatorId: payload.moderatorId,
+      status: input.status,
+      moderatedAt,
+    });
+
+    await this.updateRepliesModeration(updated.id, payload.moderatorId, input.status, moderatedAt);
+
+    this.logger.info('Lesson comment moderated', {
+      code: 'ACADEMY_COMMENT_MODERATED',
+      commentId: payload.commentId,
+      moderatorId: payload.moderatorId,
+      status: input.status,
+    });
+
+    return updated;
+  }
+
+  async bulkModerateComments(input: { commentIds: UUID[]; moderatedBy: UUID; status: 'approved' | 'rejected' }): Promise<void> {
+    const updatePromises = input.commentIds.map(commentId =>
+      this.moderateComment({
+        commentId,
+        moderatedBy: input.moderatedBy,
+        status: input.status,
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    this.logger.info('Bulk comment moderation completed', {
+      code: 'ACADEMY_BULK_COMMENT_MODERATION',
+      count: input.commentIds.length,
+      status: input.status,
+    });
+  }
+
 
   async rejectComment(input: { commentId: UUID; moderatorId: UUID }): Promise<LessonComment> {
     const payload = moderateCommentSchema.parse(input);
