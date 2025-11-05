@@ -6,7 +6,8 @@ import { colors, glows, surfaces, typography } from '../../../shared/design/toke
 import type { ContactSegment, MessageTemplate } from '../../../shared/types/hidra.types';
 import type { CreateCampaignPayload } from '../../../shared/types';
 import { mapApiError } from '../../../shared/utils/errorHandler';
-import { Button } from '../../components/common';
+import { Button, Card, CardContent, CardTitle, Input } from '../../components/common';
+import { MediaUpload } from '../../components/hidra/wizard';
 import { ScheduleReview, SegmentSelector, TemplateEditor } from '../../components/hidra/wizard';
 import { useHidraSegments } from '../../hooks/useHidraSegments';
 import { useHidraTemplates } from '../../hooks/useHidraTemplates';
