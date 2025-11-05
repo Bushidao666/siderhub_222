@@ -1053,6 +1053,161 @@ export class AcademyService {
     });
   }
 
+  // Course CRUD methods for admin
+
+  async createCourse(input: any): Promise<any> {
+    const course = await this.deps.courseRepository.create({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Course created', {
+      courseId: course.id,
+      title: course.title,
+    });
+
+    return course;
+  }
+
+  async updateCourse(courseId: UUID, updates: any): Promise<any> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    const course = await this.deps.courseRepository.update(validatedCourseId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Course updated', {
+      courseId: validatedCourseId,
+      updates: Object.keys(updates),
+    });
+
+    return course;
+  }
+
+  async deleteCourse(courseId: UUID): Promise<void> {
+    const validatedCourseId = z.string().uuid().parse(courseId);
+
+    await this.deps.courseRepository.delete(validatedCourseId);
+
+    this.logger.info('Course deleted', {
+      courseId: validatedCourseId,
+    });
+  }
+
+  // Module CRUD methods for admin
+
+  async createModule(input: any): Promise<any> {
+    const module = await this.deps.courseRepository.createModule({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Module created', {
+      moduleId: module.id,
+      courseId: input.courseId,
+      title: module.title,
+    });
+
+    return module;
+  }
+
+  async updateModule(moduleId: UUID, updates: any): Promise<any> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    const module = await this.deps.courseRepository.updateModule(validatedModuleId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Module updated', {
+      moduleId: validatedModuleId,
+      updates: Object.keys(updates),
+    });
+
+    return module;
+  }
+
+  async deleteModule(moduleId: UUID): Promise<void> {
+    const validatedModuleId = z.string().uuid().parse(moduleId);
+
+    await this.deps.courseRepository.deleteModule(validatedModuleId);
+
+    this.logger.info('Module deleted', {
+      moduleId: validatedModuleId,
+    });
+  }
+
+  // Lesson CRUD methods for admin
+
+  async createLesson(input: any): Promise<any> {
+    const lesson = await this.deps.lessonRepository.create({
+      ...input,
+      createdAt: this.nowIso(),
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Lesson created', {
+      lessonId: lesson.id,
+      moduleId: input.moduleId,
+      title: lesson.title,
+    });
+
+    return lesson;
+  }
+
+  async updateLesson(lessonId: UUID, updates: any): Promise<any> {
+    const validatedLessonId = z.string().uuid().parse(lessonId);
+
+    const lesson = await this.deps.lessonRepository.update(validatedLessonId, {
+      ...updates,
+      updatedAt: this.nowIso(),
+    });
+
+    this.logger.info('Lesson updated', {
+      lessonId: validatedLessonId,
+      updates: Object.keys(updates),
+    });
+
+    return lesson;
+  }
+
+  async deleteLesson(lessonId: UUID): Promise<void> {
+    const validatedLessonId = z.string().uuid().parse(lessonId);
+
+    await this.deps.lessonRepository.delete(validatedLessonId);
+
+    this.logger.info('Lesson deleted', {
+      lessonId: validatedLessonId,
+    });
+  }
+
+  // Analytics methods for admin
+
+  async getCourseAnalytics(): Promise<any> {
+    // Implementation would depend on specific analytics requirements
+    // For now, return a placeholder
+    return {
+      totalCourses: 0,
+      totalStudents: 0,
+      completionRate: 0,
+      averageProgress: 0,
+    };
+  }
+
+  async getEngagementAnalytics(): Promise<any> {
+    // Implementation would depend on specific analytics requirements
+    // For now, return a placeholder
+    return {
+      totalComments: 0,
+      totalRatings: 0,
+      averageRating: 0,
+      activeUsers: 0,
+    };
+  }
+
   private groupRepliesByComment(replies: LessonCommentReply[]): Map<UUID, LessonCommentReply[]> {
     const map = new Map<UUID, LessonCommentReply[]>();
     for (const reply of replies) {
