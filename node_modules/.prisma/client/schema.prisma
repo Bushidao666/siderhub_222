@@ -1,0 +1,748 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["academy", "admin", "core", "cybervault", "hidra", "public"]
+}
+
+model User {
+  id                            String                    @id @default(uuid())
+  email                         String                    @unique
+  passwordHash                  String                    @map("password_hash")
+  role                          UserRole                  @default(member)
+  profileDisplayName            String                    @map("profile_display_name")
+  profileAvatarUrl              String?                   @map("profile_avatar_url")
+  profileBio                    String?                   @map("profile_bio")
+  profileTimezone               String                    @map("profile_timezone")
+  profileBadges                 String[]                  @default([]) @map("profile_badges")
+  profileSocialLinks            Json                      @default("[]") @map("profile_social_links")
+  lastLoginAt                   DateTime?                 @map("last_login_at")
+  createdAt                     DateTime                  @default(now()) @map("created_at")
+  updatedAt                     DateTime                  @updatedAt @map("updated_at")
+  courseProgresses              CourseProgress[]          @relation("UserCourseProgress")
+  coursesAuthored               Course[]                  @relation("CourseAuthor")
+  moderatedLessonCommentReplies LessonCommentReply[]      @relation("LessonCommentReplyModerator")
+  lessonCommentReplies          LessonCommentReply[]      @relation("LessonCommentReplyUser")
+  moderatedLessonComments       LessonComment[]           @relation("LessonCommentModerator")
+  lessonComments                LessonComment[]           @relation("LessonCommentUser")
+  LessonProgressAggregate       LessonProgressAggregate[]
+  LessonProgressEvent           LessonProgressEvent[]
+  LessonRating                  LessonRating[]
+  featureTogglesCreated         FeatureToggle[]           @relation("FeatureToggleCreatedBy")
+  createdBanners                HeroBanner[]              @relation("BannerCreatedBy")
+  invitationsAccepted           Invitation[]              @relation("InvitationAcceptedBy")
+  invitationsSent               Invitation[]              @relation("InvitationInvitedBy")
+  overridesGranted              MemberAccessOverride[]    @relation("OverrideGrantedBy")
+  accessOverrides               MemberAccessOverride[]    @relation("UserAccessOverrides")
+  memberAccessGrants            MemberAccess[]            @relation("MemberAccessGrantedBy")
+  memberAccesses                MemberAccess[]            @relation("UserMemberAccesses")
+  sessions                      Session[]
+  resourceDownloadLogs          ResourceDownloadLog[]     @relation("ResourceDownloadUser")
+  resourcesAuthored             Resource[]                @relation("ResourceAuthor")
+  campaignRunsInitiated         CampaignRun[]             @relation("CampaignRunInitiator")
+  campaigns                     Campaign[]                @relation("UserCampaigns")
+  contactSegments               ContactSegment[]
+  evolutionConfig               EvolutionApiConfig?       @relation("UserEvolutionConfig")
+  messageTemplates              MessageTemplate[]
+
+  @@map("users")
+  @@schema("core")
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  device           String    @default("unknown")
+  userAgent        String    @map("user_agent")
+  ipAddress        String    @map("ip_address")
+  lastUsedAt       DateTime? @map("last_used_at")
+  expiresAt        DateTime  @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+  @@schema("core")
+}
+
+model MemberAccess {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  feature     FeatureAccessKey
+  enabled     Boolean          @default(true)
+  permissions String[]         @default([]) @map("permissions")
+  grantedById String?          @map("granted_by_id")
+  grantedAt   DateTime?        @map("granted_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  grantedBy   User?            @relation("MemberAccessGrantedBy", fields: [grantedById], references: [id])
+  user        User             @relation("UserMemberAccesses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, feature])
+  @@index([feature])
+  @@map("member_access")
+  @@schema("core")
+}
+
+model HeroBanner {
+  id                   String       @id @default(uuid())
+  title                String
+  description          String
+  primaryCtaLabel      String       @map("primary_cta_label")
+  primaryCtaHref       String       @map("primary_cta_href")
+  primaryCtaExternal   Boolean      @default(false) @map("primary_cta_external")
+  secondaryCtaLabel    String?      @map("secondary_cta_label")
+  secondaryCtaHref     String?      @map("secondary_cta_href")
+  secondaryCtaExternal Boolean?     @map("secondary_cta_external")
+  imageUrl             String       @map("image_url")
+  order                Int
+  status               BannerStatus
+  startsAt             DateTime?    @map("starts_at")
+  endsAt               DateTime?    @map("ends_at")
+  createdById          String       @map("created_by_id")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+  createdBy            User         @relation("BannerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([status, order])
+  @@map("hero_banners")
+  @@schema("admin")
+}
+
+model FeatureToggle {
+  id                String              @id @default(uuid())
+  featureKey        String              @unique @map("feature_key")
+  description       String
+  status            FeatureToggleStatus
+  rolloutPercentage Int                 @default(0) @map("rollout_percentage")
+  createdById       String              @map("created_by_id")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  createdBy         User                @relation("FeatureToggleCreatedBy", fields: [createdById], references: [id])
+
+  @@map("feature_toggles")
+  @@schema("admin")
+}
+
+model MemberAccessOverride {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  feature     String
+  enabled     Boolean  @default(true)
+  permissions String[] @default([])
+  reason      String
+  grantedById String   @map("granted_by_id")
+  grantedAt   DateTime @default(now()) @map("granted_at")
+  grantedBy   User     @relation("OverrideGrantedBy", fields: [grantedById], references: [id])
+  user        User     @relation("UserAccessOverrides", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, feature])
+  @@map("member_access_overrides")
+  @@schema("admin")
+}
+
+model InvitationTemplate {
+  id           String     @id @default(uuid())
+  name         String
+  subject      String
+  bodyMarkdown String     @map("body_markdown")
+  visibility   Visibility
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("invitation_templates")
+  @@schema("admin")
+}
+
+model Invitation {
+  id            String             @id @default(uuid())
+  code          String             @unique
+  email         String
+  role          UserRole
+  status        InvitationStatus   @default(pending)
+  invitedById   String             @map("invited_by_id")
+  grantedAccess FeatureAccessKey[] @map("granted_access")
+  expiresAt     DateTime           @map("expires_at")
+  acceptedById  String?            @map("accepted_by_id")
+  acceptedAt    DateTime?          @map("accepted_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  acceptedBy    User?              @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id])
+  invitedBy     User               @relation("InvitationInvitedBy", fields: [invitedById], references: [id])
+
+  @@map("invitations")
+  @@schema("admin")
+}
+
+model Course {
+  id                       String                 @id @default(uuid())
+  slug                     String                 @unique
+  title                    String
+  subtitle                 String
+  description              String
+  coverImage               String?                @map("cover_image")
+  level                    CourseLevel
+  status                   CourseStatus
+  visibility               Visibility
+  estimatedDurationMinutes Int                    @default(0) @map("estimated_duration_minutes")
+  totalLessons             Int                    @default(0) @map("total_lessons")
+  tags                     String[]               @default([])
+  releaseDate              DateTime?              @map("release_date")
+  createdById              String?                @map("created_by_id")
+  createdAt                DateTime               @default(now()) @map("created_at")
+  updatedAt                DateTime               @updatedAt @map("updated_at")
+  isFeatured               Boolean                @default(false) @map("is_featured")
+  recommendationScore      Float                  @default(0) @map("recommendation_score")
+  modules                  CourseModule[]
+  progresses               CourseProgress[]
+  recommendations          CourseRecommendation[]
+  author                   User?                  @relation("CourseAuthor", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([visibility])
+  @@index([createdById])
+  @@index([isFeatured])
+  @@index([recommendationScore])
+  @@map("courses")
+  @@schema("academy")
+}
+
+model CourseModule {
+  id                String         @id @default(uuid())
+  courseId          String         @map("course_id")
+  order             Int
+  title             String
+  description       String
+  durationMinutes   Int            @map("duration_minutes")
+  dripDaysAfter     Int?           @map("drip_days_after")
+  dripReleaseAt     DateTime?      @map("drip_release_at")
+  dripAfterModuleId String?        @map("drip_after_module_id")
+  course            Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  dripAfterModule   CourseModule?  @relation("ModuleDripDependency", fields: [dripAfterModuleId], references: [id])
+  dependentModules  CourseModule[] @relation("ModuleDripDependency")
+  lessons           Lesson[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
+  @@index([courseId, dripReleaseAt])
+  @@index([dripAfterModuleId])
+  @@map("course_modules")
+  @@schema("academy")
+}
+
+model Lesson {
+  id                 String                    @id @default(uuid())
+  moduleId           String                    @map("module_id")
+  order              Int
+  title              String
+  summary            String
+  type               LessonType
+  content            Json
+  durationMinutes    Int                       @map("duration_minutes")
+  isPreview          Boolean                   @default(false) @map("is_preview")
+  releaseAt          DateTime?                 @map("release_at")
+  comments           LessonComment[]
+  progressAggregates LessonProgressAggregate[]
+  progressEvents     LessonProgressEvent[]
+  ratings            LessonRating[]
+  module             CourseModule              @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, order])
+  @@index([moduleId])
+  @@index([releaseAt])
+  @@map("lessons")
+  @@schema("academy")
+}
+
+model CourseProgress {
+  courseId           String   @map("course_id")
+  userId             String   @map("user_id")
+  completedLessonIds String[] @default([]) @map("completed_lesson_ids")
+  percentage         Float    @default(0)
+  lastLessonId       String?  @map("last_lesson_id")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  course             Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user               User     @relation("UserCourseProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, userId])
+  @@index([userId])
+  @@index([courseId, userId, percentage])
+  @@map("course_progress")
+  @@schema("academy")
+}
+
+model LessonComment {
+  id                String                        @id @default(uuid())
+  lessonId          String                        @map("lesson_id")
+  userId            String                        @map("user_id")
+  body              String
+  createdAt         DateTime                      @default(now()) @map("created_at")
+  updatedAt         DateTime                      @updatedAt @map("updated_at")
+  pendingModeration Boolean                       @default(false) @map("pending_moderation")
+  moderatedAt       DateTime?                     @map("moderated_at")
+  moderatedById     String?                       @map("moderated_by_id")
+  moderationStatus  LessonCommentModerationStatus @default(pending) @map("moderation_status")
+  replies           LessonCommentReply[]
+  lesson            Lesson                        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  moderatedBy       User?                         @relation("LessonCommentModerator", fields: [moderatedById], references: [id])
+  user              User                          @relation("LessonCommentUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([userId])
+  @@index([lessonId, createdAt(sort: Desc)])
+  @@index([moderationStatus, createdAt(sort: Desc)])
+  @@map("lesson_comments")
+  @@schema("academy")
+}
+
+model LessonCommentReply {
+  id                String                        @id @default(uuid())
+  commentId         String                        @map("comment_id")
+  userId            String                        @map("user_id")
+  body              String
+  createdAt         DateTime                      @default(now()) @map("created_at")
+  moderatedAt       DateTime?                     @map("moderated_at")
+  moderatedById     String?                       @map("moderated_by_id")
+  moderationStatus  LessonCommentModerationStatus @default(pending) @map("moderation_status")
+  parentReplyId     String?                       @map("parent_reply_id")
+  pendingModeration Boolean                       @default(false) @map("pending_moderation")
+  updatedAt         DateTime                      @default(now()) @updatedAt @map("updated_at")
+  comment           LessonComment                 @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  moderatedBy       User?                         @relation("LessonCommentReplyModerator", fields: [moderatedById], references: [id])
+  parentReply       LessonCommentReply?           @relation("LessonCommentReplyHierarchy", fields: [parentReplyId], references: [id])
+  replies           LessonCommentReply[]          @relation("LessonCommentReplyHierarchy")
+  user              User                          @relation("LessonCommentReplyUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([commentId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([moderationStatus, createdAt(sort: Desc)])
+  @@index([parentReplyId])
+  @@map("lesson_comment_replies")
+  @@schema("academy")
+}
+
+model CourseRecommendation {
+  id       String               @id @default(uuid())
+  courseId String               @map("course_id")
+  reason   String
+  badge    RecommendationBadge?
+  course   Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_recommendations")
+  @@schema("academy")
+}
+
+model LessonRating {
+  id        String   @id @default(uuid())
+  lessonId  String   @map("lesson_id")
+  userId    String   @map("user_id")
+  value     Int      @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at")
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
+  @@index([userId])
+  @@index([lessonId, userId])
+  @@map("lesson_ratings")
+  @@schema("academy")
+}
+
+model LessonProgressEvent {
+  id          String   @id @default(uuid())
+  lessonId    String   @map("lesson_id")
+  userId      String   @map("user_id")
+  occurredAt  DateTime @map("occurred_at")
+  positionSec Int      @map("position_sec")
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([userId])
+  @@index([lessonId, userId])
+  @@index([userId, lessonId, occurredAt])
+  @@map("lesson_progress_events")
+  @@schema("academy")
+}
+
+model LessonProgressAggregate {
+  lessonId        String   @map("lesson_id")
+  userId          String   @map("user_id")
+  lastPositionSec Int      @default(0) @map("last_position_sec")
+  percentage      Float    @default(0)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  lesson          Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([lessonId, userId])
+  @@index([lessonId])
+  @@index([userId])
+  @@map("lesson_progress_aggregate")
+  @@schema("academy")
+}
+
+model EvolutionApiConfig {
+  id                String                    @id @default(uuid())
+  userId            String                    @unique @map("user_id")
+  baseUrl           String                    @map("base_url")
+  apiKeyEncrypted   Bytes                     @map("api_key_encrypted")
+  connectedAt       DateTime?                 @map("connected_at")
+  lastHealthCheckAt DateTime?                 @map("last_health_check_at")
+  status            EvolutionConnectionStatus
+  errorMessage      String?                   @map("error_message")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  campaigns         Campaign[]
+  user              User                      @relation("UserEvolutionConfig", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("evolution_api_config")
+  @@schema("hidra")
+}
+
+model ContactSegment {
+  id            String              @id @default(uuid())
+  userId        String              @map("user_id")
+  name          String
+  description   String
+  importSource  ContactImportSource @map("import_source")
+  totalContacts Int                 @default(0) @map("total_contacts")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  campaigns     Campaign[]          @relation("CampaignSegment")
+  user          User                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("contact_segments")
+  @@schema("hidra")
+}
+
+model MessageTemplate {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  title     String
+  body      String
+  variables String[]   @default([])
+  mediaUrl  String?    @map("media_url")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  campaigns Campaign[] @relation("CampaignTemplate")
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("message_templates")
+  @@schema("hidra")
+}
+
+model Campaign {
+  id                   String                  @id @default(uuid())
+  userId               String                  @map("user_id")
+  evolutionConfigId    String?                 @map("evolution_config_id")
+  name                 String
+  description          String
+  channel              CampaignChannel
+  status               CampaignStatus
+  scheduledAt          DateTime?               @map("scheduled_at")
+  startedAt            DateTime?               @map("started_at")
+  completedAt          DateTime?               @map("completed_at")
+  segmentId            String                  @map("segment_id")
+  templateId           String                  @map("template_id")
+  externalId           String?                 @unique @map("external_id")
+  maxMessagesPerMinute Int                     @default(60) @map("max_messages_per_minute")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  metrics              CampaignMetrics?
+  runs                 CampaignRun[]
+  timeline             CampaignTimelinePoint[]
+  evolutionConfig      EvolutionApiConfig?     @relation(fields: [evolutionConfigId], references: [id])
+  segment              ContactSegment          @relation("CampaignSegment", fields: [segmentId], references: [id])
+  template             MessageTemplate         @relation("CampaignTemplate", fields: [templateId], references: [id])
+  user                 User                    @relation("UserCampaigns", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([segmentId])
+  @@index([templateId])
+  @@index([evolutionConfigId])
+  @@map("campaigns")
+  @@schema("hidra")
+}
+
+model CampaignRun {
+  id          String         @id @default(uuid())
+  campaignId  String         @map("campaign_id")
+  initiatedBy String         @map("initiated_by")
+  startedAt   DateTime       @map("started_at")
+  endedAt     DateTime?      @map("ended_at")
+  status      CampaignStatus
+  summary     String?
+  campaign    Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  initiator   User           @relation("CampaignRunInitiator", fields: [initiatedBy], references: [id])
+
+  @@index([campaignId])
+  @@map("campaign_runs")
+  @@schema("hidra")
+}
+
+model CampaignMetrics {
+  campaignId        String   @id @map("campaign_id")
+  totalMessages     Int      @default(0) @map("total_messages")
+  delivered         Int      @default(0)
+  failed            Int      @default(0)
+  pending           Int      @default(0)
+  averageDeliveryMs Int      @default(0) @map("average_delivery_ms")
+  lastUpdatedAt     DateTime @updatedAt @map("last_updated_at")
+  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_metrics")
+  @@schema("hidra")
+}
+
+model CampaignTimelinePoint {
+  id         String   @id @default(uuid())
+  campaignId String   @map("campaign_id")
+  timestamp  DateTime
+  delivered  Int      @default(0)
+  failed     Int      @default(0)
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, timestamp])
+  @@map("campaign_timeline_points")
+  @@schema("hidra")
+}
+
+model ResourceCategory {
+  id          String     @id @default(uuid())
+  name        String
+  description String
+  icon        String
+  order       Int
+  createdAt   DateTime   @default(now()) @map("created_at")
+  resources   Resource[]
+
+  @@map("resource_categories")
+  @@schema("cybervault")
+}
+
+model ResourceTag {
+  id             String                  @id @default(uuid())
+  name           String                  @unique
+  tagAssignments ResourceTagAssignment[]
+
+  @@map("resource_tags")
+  @@schema("cybervault")
+}
+
+model Resource {
+  id            String                  @id @default(uuid())
+  slug          String                  @unique
+  title         String
+  description   String
+  type          ResourceType
+  categoryId    String                  @map("category_id")
+  thumbnailUrl  String?                 @map("thumbnail_url")
+  visibility    Visibility
+  featured      Boolean                 @default(false)
+  downloadCount Int                     @default(0) @map("download_count")
+  viewCount     Int                     @default(0) @map("view_count")
+  createdById   String                  @map("created_by_id")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  assets        ResourceAsset[]
+  downloads     ResourceDownloadLog[]
+  tags          ResourceTagAssignment[]
+  category      ResourceCategory        @relation(fields: [categoryId], references: [id])
+  author        User                    @relation("ResourceAuthor", fields: [createdById], references: [id])
+
+  @@index([categoryId])
+  @@index([visibility])
+  @@index([createdById])
+  @@index([featured])
+  @@map("resources")
+  @@schema("cybervault")
+}
+
+model ResourceTagAssignment {
+  resourceId String      @map("resource_id")
+  tagId      String      @map("tag_id")
+  resource   Resource    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  tag        ResourceTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([resourceId, tagId])
+  @@map("resource_tag_assignments")
+  @@schema("cybervault")
+}
+
+model ResourceAsset {
+  id         String   @id @default(uuid())
+  resourceId String   @map("resource_id")
+  fileUrl    String   @map("file_url")
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  sizeBytes  Int      @map("size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@map("resource_assets")
+  @@schema("cybervault")
+}
+
+model ResourceDownloadLog {
+  id           String   @id @default(uuid())
+  resourceId   String   @map("resource_id")
+  userId       String   @map("user_id")
+  downloadedAt DateTime @default(now()) @map("downloaded_at")
+  ipAddress    String   @map("ip_address") @db.Inet
+  resource     Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user         User     @relation("ResourceDownloadUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([userId])
+  @@map("resource_download_logs")
+  @@schema("cybervault")
+}
+
+enum UserRole {
+  member
+  mentor
+  admin
+  super_admin
+
+  @@schema("public")
+}
+
+enum FeatureAccessKey {
+  hidra
+  cybervault
+  academy
+  admin_console
+  community
+
+  @@schema("public")
+}
+
+enum CourseStatus {
+  draft
+  scheduled
+  published
+  archived
+
+  @@schema("public")
+}
+
+enum CourseLevel {
+  beginner
+  intermediate
+  advanced
+
+  @@schema("public")
+}
+
+enum Visibility {
+  private
+  members
+  mentors
+  public
+
+  @@schema("public")
+}
+
+enum LessonType {
+  video
+  article
+  live
+  downloadable
+  quiz
+
+  @@schema("public")
+}
+
+enum RecommendationBadge {
+  new
+  popular
+  mentor_pick
+
+  @@schema("public")
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  running
+  paused
+  completed
+  failed
+
+  @@schema("public")
+}
+
+enum CampaignChannel {
+  whatsapp
+
+  @@schema("public")
+}
+
+enum BannerStatus {
+  active
+  inactive
+  scheduled
+
+  @@schema("public")
+}
+
+enum FeatureToggleStatus {
+  enabled
+  disabled
+  gradual
+
+  @@schema("public")
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+
+  @@schema("public")
+}
+
+enum LessonCommentModerationStatus {
+  pending
+  approved
+  rejected
+
+  @@schema("public")
+}
+
+enum EvolutionConnectionStatus {
+  connected
+  disconnected
+  error
+
+  @@schema("public")
+}
+
+enum ContactImportSource {
+  csv_upload
+  manual
+  api
+
+  @@schema("public")
+}
+
+enum ResourceType {
+  template
+  playbook
+  script
+  asset
+  spreadsheet
+  presentation
+  other
+
+  @@schema("public")
+}
