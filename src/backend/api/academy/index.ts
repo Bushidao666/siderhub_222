@@ -67,9 +67,108 @@ const lessonProgressTickBodySchema = z.object({
 })
 const LESSON_PROGRESS_INTERVAL_SECONDS = 10
 
+// Admin-only validation schemas
+const createCourseSchema = z.object({
+  title: z.string().min(3).max(200),
+  subtitle: z.string().max(300).optional(),
+  description: z.string().min(10).max(2000),
+  level: z.enum(['beginner', 'intermediate', 'advanced']),
+  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  visibility: z.enum(['public', 'private', 'members']).default('public'),
+  estimatedDurationMinutes: z.coerce.number().int().min(1).optional(),
+  tags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  isFeatured: z.boolean().default(false),
+  coverImage: z.string().url().optional(),
+  releaseDate: z.string().datetime().optional(),
+})
+
+const updateCourseSchema = createCourseSchema.partial()
+
+const createModuleSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().max(1000).optional(),
+  order: z.coerce.number().int().min(0),
+  durationMinutes: z.coerce.number().int().min(1),
+  dripReleaseAt: z.string().datetime().optional(),
+  dripDaysAfter: z.coerce.number().int().min(0).optional(),
+  dripAfterModuleId: z.string().uuid().optional(),
+})
+
+const createLessonSchema = z.object({
+  moduleId: z.string().uuid(),
+  title: z.string().min(3).max(200),
+  summary: z.string().max(500).optional(),
+  type: z.enum(['video', 'article', 'live', 'download', 'quiz']),
+  content: z.object({
+    video: z.object({
+      videoUrl: z.string().url(),
+      durationSeconds: z.coerce.number().int().min(1),
+      captionsUrl: z.string().url().optional(),
+      transcript: z.string().optional(),
+    }).optional(),
+    article: z.object({
+      bodyMarkdown: z.string().min(10),
+    }).optional(),
+    live: z.object({
+      scheduledAt: z.string().datetime(),
+      meetingUrl: z.string().url(),
+    }).optional(),
+    download: z.object({
+      assets: z.array(z.object({
+        fileUrl: z.string().url(),
+        fileName: z.string().min(1),
+        fileSizeBytes: z.coerce.number().int().min(1),
+      })).min(1),
+    }).optional(),
+    quiz: z.object({
+      questions: z.array(z.object({
+        id: z.string().uuid(),
+        question: z.string().min(1),
+        options: z.array(z.string()).min(2),
+        correctIndex: z.coerce.number().int().min(0),
+      })).min(1),
+    }).optional(),
+  }),
+  durationMinutes: z.coerce.number().int().min(1),
+  isPreview: z.boolean().default(false),
+  releaseAt: z.string().datetime().optional(),
+})
+
+const createResourceCategorySchema = z.object({
+  name: z.string().min(2).max(50),
+  description: z.string().max(200).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+})
+
+const createResourceSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().max(1000).optional(),
+  category: z.string().uuid(),
+  fileUrl: z.string().url(),
+  fileName: z.string().min(1),
+  fileSize: z.coerce.number().int().min(1),
+  fileType: z.string(),
+  tags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  isPublic: z.boolean().default(true),
+})
+
+const moderateCommentSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+  commentIds: z.array(z.string().uuid()).min(1),
+})
+
+const moderateSingleCommentSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+})
+
 export function createAcademyRouter(services: ApiServices) {
   const router = Router()
   const authGuard = createAuthGuard(services.tokenService)
+
+  // Admin endpoints - these should be moved to a separate admin academy router
+  // but for now we'll add them here with additional admin validation
+
+  const adminGuard = createAuthGuard(services.tokenService, ['admin', 'super_admin'])
 
   router.get('/courses', authGuard, async (req: Request, res: Response, next: NextFunction) => {
     const parsed = listQuerySchema.safeParse(req.query)
