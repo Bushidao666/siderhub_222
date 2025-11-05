@@ -13,6 +13,8 @@ type SegmentSelectorProps = {
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  onCSVImport?: (data: { name: string; description?: string; contacts: any[] }) => void;
+  csvImportLoading?: boolean;
 };
 
 const SegmentSkeleton = () => (
