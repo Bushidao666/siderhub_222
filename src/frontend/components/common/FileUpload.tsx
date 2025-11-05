@@ -231,9 +231,9 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
             )}
             style={{
               '--upload-border': colors.borderPrimary,
-              '--upload-bg': surfaces.bgSecondary,
+              '--upload-bg': colors.bgSecondary,
               '--upload-hover': colors.borderAccent,
-              '--upload-hover-bg': surfaces.bgTertiary,
+              '--upload-hover-bg': colors.bgTertiary,
               '--upload-focus': colors.borderAccent,
               '--upload-error-border': colors.accentError,
             } as CSSProperties}
