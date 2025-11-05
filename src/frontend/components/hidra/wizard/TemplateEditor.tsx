@@ -14,6 +14,10 @@ type TemplateEditorProps = {
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  selectedMedia?: MediaFile | null;
+  onMediaSelect?: (media: MediaFile | null) => void;
+  onMediaUpload?: (file: File) => Promise<MediaFile>;
+  mediaLibrary?: MediaFile[];
 };
 
 const TemplateSkeleton = () => (
