@@ -36,6 +36,10 @@ export const TemplateEditor = ({
   loading,
   error,
   onRetry,
+  selectedMedia,
+  onMediaSelect,
+  onMediaUpload,
+  mediaLibrary,
 }: TemplateEditorProps) => {
   if (loading) {
     return (
