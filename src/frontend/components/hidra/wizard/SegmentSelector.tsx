@@ -115,49 +115,85 @@ export const SegmentSelector = ({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2" data-testid="hidra-segment-list">
-      {segments.map((segment) => {
-        const isActive = segment.id === selectedSegmentId;
-        return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2" data-testid="hidra-segment-list">
+        {segments.map((segment) => {
+          const isActive = segment.id === selectedSegmentId;
+          return (
+            <button
+              key={segment.id}
+              type="button"
+              onClick={() => onSelect(segment)}
+              className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--focus-offset)]"
+              data-testid={`hidra-segment-${segment.id}`}
+              aria-pressed={isActive}
+              style={{
+                '--focus-ring': colors.borderAccent,
+                '--focus-offset': colors.bgPrimary,
+              } as CSSProperties}
+            >
+              <Card
+                variant={isActive ? 'outlined' : 'solid'}
+                glowing={isActive}
+                className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+                style={
+                  {
+                    '--card-border': isActive ? colors.borderAccent : colors.borderPrimary,
+                    '--card-shadow': isActive ? glows.md : glows.sm,
+                  } as CSSProperties
+                }
+              >
+                <CardTitle className="text-lg" style={{ color: colors.primary }}>
+                  {segment.name}
+                </CardTitle>
+                <CardContent>
+                  <p>{segment.description}</p>
+                  <div className="text-xs uppercase tracking-[0.18em]" style={{ color: colors.textSecondary }}>
+                    {segment.totalContacts} contatos · {importSourceLabel[segment.importSource]}
+                  </div>
+                  <span className="text-xs" style={{ color: colors.textTertiary }}>
+                    Criado em {new Date(segment.createdAt).toLocaleDateString('pt-BR')}
+                  </span>
+                </CardContent>
+              </Card>
+            </button>
+          );
+        })}
+
+        {onCSVImport && (
           <button
-            key={segment.id}
             type="button"
-            onClick={() => onSelect(segment)}
+            onClick={() => setShowCSVImport(true)}
+            disabled={csvImportLoading}
             className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--focus-offset)]"
-            data-testid={`hidra-segment-${segment.id}`}
-            aria-pressed={isActive}
+            data-testid="hidra-segment-create-csv"
             style={{
               '--focus-ring': colors.borderAccent,
               '--focus-offset': colors.bgPrimary,
             } as CSSProperties}
           >
             <Card
-              variant={isActive ? 'outlined' : 'solid'}
-              glowing={isActive}
-              className="h-full transition-transform duration-200 hover:-translate-y-0.5"
-              style={
-                {
-                  '--card-border': isActive ? colors.borderAccent : colors.borderPrimary,
-                  '--card-shadow': isActive ? glows.md : glows.sm,
-                } as CSSProperties
-              }
+              variant="ghost"
+              className="h-full border-2 border-dashed transition-transform duration-200 hover:-translate-y-0.5 hover:border-[var(--hover-border)]"
+              style={{
+                '--hover-border': colors.borderAccent,
+              } as CSSProperties}
             >
-              <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                {segment.name}
+              <CardTitle className="text-lg" style={{ color: colors.textSecondary }}>
+                + Importar Novo Segmento
               </CardTitle>
               <CardContent>
-                <p>{segment.description}</p>
-                <div className="text-xs uppercase tracking-[0.18em]" style={{ color: colors.textSecondary }}>
-                  {segment.totalContacts} contatos · {importSourceLabel[segment.importSource]}
+                <p className="text-sm" style={{ color: colors.textTertiary }}>
+                  Faça upload de um arquivo CSV para criar um novo segmento de contatos.
+                </p>
+                <div className="text-xs uppercase tracking-[0.18em]" style={{ color: colors.textTertiary }}>
+                  CSV Upload · Ilimitados contatos
                 </div>
-                <span className="text-xs" style={{ color: colors.textTertiary }}>
-                  Criado em {new Date(segment.createdAt).toLocaleDateString('pt-BR')}
-                </span>
               </CardContent>
             </Card>
           </button>
-        );
-      })}
+        )}
+      </div>
     </div>
   );
 };
