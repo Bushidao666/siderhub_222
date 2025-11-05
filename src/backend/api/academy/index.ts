@@ -161,6 +161,27 @@ const moderateSingleCommentSchema = z.object({
   status: z.enum(['approved', 'rejected']),
 })
 
+const courseDripConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  type: z.enum(['none', 'date', 'enrollment']).default('none'),
+  releaseDate: z.string().datetime().optional(),
+  daysAfterEnrollment: z.coerce.number().int().min(0).optional(),
+})
+
+const moduleDripConfigSchema = z.object({
+  type: z.enum(['none', 'date', 'days_after', 'after_completion']).default('none'),
+  releaseDate: z.string().datetime().optional(),
+  daysAfter: z.coerce.number().int().min(0).optional(),
+  afterModuleId: z.string().uuid().optional(),
+})
+
+const bulkDripConfigSchema = z.object({
+  moduleConfigs: z.array(z.object({
+    moduleId: z.string().uuid(),
+    config: moduleDripConfigSchema,
+  })),
+})
+
 export function createAcademyRouter(services: ApiServices) {
   const router = Router()
   const authGuard = createAuthGuard(services.tokenService)
