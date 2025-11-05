@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { colors, typography, surfaces } from '../../../shared/design/tokens';
