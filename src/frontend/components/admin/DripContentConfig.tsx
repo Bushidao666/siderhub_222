@@ -552,7 +552,7 @@ export const DripContentConfig = ({
                       <input
                         type="checkbox"
                         checked={config.unlockOnEnrollment}
-                        onChange={(e) => handleConfigChange('unlockOnEnrollment, e.target.checked)}
+                        onChange={(e) => handleConfigChange('unlockOnEnrollment', e.target.checked)}
                         className="h-4 w-4 rounded border border-[var(--checkbox-border)] bg-[var(--checkbox-bg)] text-[var(--checkbox-checked)] focus:ring-[var(--checkbox-focus)]"
                         style={{
                           '--checkbox-border': colors.borderPrimary,
